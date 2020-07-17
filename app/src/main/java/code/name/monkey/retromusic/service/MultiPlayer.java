@@ -16,29 +16,46 @@ package code.name.monkey.retromusic.service;
 
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.audiofx.AudioEffect;
 import android.net.Uri;
-import android.os.PowerManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.upstream.DataSink;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.FileDataSourceFactory;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSinkFactory;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
+
 import code.name.monkey.retromusic.R;
+import code.name.monkey.retromusic.abram.Constants;
+import code.name.monkey.retromusic.abram.EventLog;
+import code.name.monkey.retromusic.abram.RemoteConfig;
 import code.name.monkey.retromusic.service.playback.Playback;
-import code.name.monkey.retromusic.util.PreferenceUtil;
+import code.name.monkey.retromusic.util.RewardManager;
 
 /**
  * @author Andrew Neal, Karim Abou Zeid (kabouzeid)
  */
-public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
+public class MultiPlayer implements Playback, Player.EventListener {
     public static final String TAG = MultiPlayer.class.getSimpleName();
 
-    private MediaPlayer mCurrentMediaPlayer = new MediaPlayer();
-    private MediaPlayer mNextMediaPlayer;
+    private SimpleExoPlayer mCurrentMediaPlayer;
+    private SimpleExoPlayer mNextMediaPlayer;
 
     private Context context;
     @Nullable
@@ -46,12 +63,16 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
 
     private boolean mIsInitialized = false;
 
+    private long playingTime = 0;
+
+    private boolean seek = false;
+
     /**
      * Constructor of <code>MultiPlayer</code>
      */
     MultiPlayer(final Context context) {
         this.context = context;
-        mCurrentMediaPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
+        mCurrentMediaPlayer = ExoPlayerFactory.newSimpleInstance(context);
     }
 
     /**
@@ -64,6 +85,8 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     public boolean setDataSource(@NonNull final String path) {
         mIsInitialized = false;
         mIsInitialized = setDataSourceImpl(mCurrentMediaPlayer, path);
+        Log.d(TAG, Constants.STATS_MUSIC_PLAY);
+        EventLog.INSTANCE.log(Constants.STATS_MUSIC_PLAY);
         if (mIsInitialized) {
             setNextDataSource(null);
         }
@@ -77,25 +100,24 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
      * @return True if the <code>player</code> has been prepared and is
      * ready to play, false otherwise
      */
-    private boolean setDataSourceImpl(@NonNull final MediaPlayer player, @NonNull final String path) {
+    private boolean setDataSourceImpl(@NonNull final ExoPlayer player, @NonNull final String path) {
         if (context == null) {
             return false;
         }
         try {
-            player.reset();
-            player.setOnPreparedListener(null);
-            if (path.startsWith("content://")) {
-                player.setDataSource(context, Uri.parse(path));
-            } else {
-                player.setDataSource(path);
-            }
-            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            player.prepare();
+            player.stop(true);
+            DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, Constants.APPLICATION_ID));
+            DataSink.Factory cacheWriteDataSinkFactory = new CacheDataSinkFactory(Constants.INSTANCE.getPLAY_MUSIC_CACHE(), Long.MAX_VALUE);
+            CacheDataSourceFactory cacheDataSourceFactory = new CacheDataSourceFactory(Constants.INSTANCE.getPLAY_MUSIC_CACHE(),
+                    dataSourceFactory, new FileDataSourceFactory(), cacheWriteDataSinkFactory,
+                    CacheDataSource.FLAG_BLOCK_ON_CACHE | CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR, null);
+
+            MediaSource source = new ProgressiveMediaSource.Factory(cacheDataSourceFactory).createMediaSource(Uri.parse(path));
+            player.prepare(source);
         } catch (Exception e) {
             return false;
         }
-        player.setOnCompletionListener(this);
-        player.setOnErrorListener(this);
+        player.addListener(this);
         final Intent intent = new Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION);
         intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, getAudioSessionId());
         intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.getPackageName());
@@ -115,42 +137,23 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
         if (context == null) {
             return;
         }
-        try {
-            mCurrentMediaPlayer.setNextMediaPlayer(null);
-        } catch (IllegalArgumentException e) {
-            Log.i(TAG, "Next media player is current one, continuing");
-        } catch (IllegalStateException e) {
-            Log.e(TAG, "Media player not initialized!");
-            return;
-        }
         if (mNextMediaPlayer != null) {
             mNextMediaPlayer.release();
             mNextMediaPlayer = null;
         }
-        if (path == null) {
-            return;
-        }
-        if (PreferenceUtil.INSTANCE.isGapLessPlayback()) {
-            mNextMediaPlayer = new MediaPlayer();
-            mNextMediaPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
-            mNextMediaPlayer.setAudioSessionId(getAudioSessionId());
-            if (setDataSourceImpl(mNextMediaPlayer, path)) {
-                try {
-                    mCurrentMediaPlayer.setNextMediaPlayer(mNextMediaPlayer);
-                } catch (@NonNull IllegalArgumentException | IllegalStateException e) {
-                    Log.e(TAG, "setNextDataSource: setNextMediaPlayer()", e);
-                    if (mNextMediaPlayer != null) {
-                        mNextMediaPlayer.release();
-                        mNextMediaPlayer = null;
-                    }
-                }
-            } else {
-                if (mNextMediaPlayer != null) {
-                    mNextMediaPlayer.release();
-                    mNextMediaPlayer = null;
-                }
-            }
-        }
+        // FIXME: 此功能有严重 BUG，暂时屏蔽
+//        if (path == null) {
+//            return;
+//        }
+//        if (PreferenceUtil.getInstance(context).gaplessPlayback()) {
+//            mNextMediaPlayer = ExoPlayerFactory.newSimpleInstance(context);
+//            if (!setDataSourceImpl(mNextMediaPlayer, path)) {
+//                if (mNextMediaPlayer != null) {
+//                    mNextMediaPlayer.release();
+//                    mNextMediaPlayer = null;
+//                }
+//            }
+//        }
     }
 
     /**
@@ -177,7 +180,10 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     @Override
     public boolean start() {
         try {
-            mCurrentMediaPlayer.start();
+            mCurrentMediaPlayer.setPlayWhenReady(true);
+            Log.d(TAG, Constants.STATS_MUSIC_START);
+            EventLog.INSTANCE.log(Constants.STATS_MUSIC_START);
+            if (context != null) context.sendBroadcast(new Intent(MusicService.ACTION_PLAY));
             return true;
         } catch (IllegalStateException e) {
             return false;
@@ -189,7 +195,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
      */
     @Override
     public void stop() {
-        mCurrentMediaPlayer.reset();
+        mCurrentMediaPlayer.stop(true);
         mIsInitialized = false;
     }
 
@@ -211,7 +217,10 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     @Override
     public boolean pause() {
         try {
-            mCurrentMediaPlayer.pause();
+            mCurrentMediaPlayer.setPlayWhenReady(false);
+            Log.d(TAG, Constants.STATS_MUSIC_PAUSE);
+            EventLog.INSTANCE.log(Constants.STATS_MUSIC_PAUSE);
+            if (context != null) context.sendBroadcast(new Intent(MusicService.ACTION_PAUSE));
             return true;
         } catch (IllegalStateException e) {
             return false;
@@ -223,7 +232,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
      */
     @Override
     public boolean isPlaying() {
-        return mIsInitialized && mCurrentMediaPlayer.isPlaying();
+        return mIsInitialized && mCurrentMediaPlayer.getPlayWhenReady();
     }
 
     /**
@@ -237,7 +246,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
             return -1;
         }
         try {
-            return mCurrentMediaPlayer.getDuration();
+            return (int) mCurrentMediaPlayer.getDuration();
         } catch (IllegalStateException e) {
             return -1;
         }
@@ -254,7 +263,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
             return -1;
         }
         try {
-            return mCurrentMediaPlayer.getCurrentPosition();
+            return (int) mCurrentMediaPlayer.getCurrentPosition();
         } catch (IllegalStateException e) {
             return -1;
         }
@@ -269,7 +278,10 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     @Override
     public int seek(final int whereto) {
         try {
+            seek = true;
             mCurrentMediaPlayer.seekTo(whereto);
+            Log.d(TAG, Constants.STATS_MUSIC_SEEK);
+            EventLog.INSTANCE.log(Constants.STATS_MUSIC_SEEK);
             return whereto;
         } catch (IllegalStateException e) {
             return -1;
@@ -279,7 +291,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     @Override
     public boolean setVolume(final float vol) {
         try {
-            mCurrentMediaPlayer.setVolume(vol, vol);
+            mCurrentMediaPlayer.setVolume(vol);
             return true;
         } catch (IllegalStateException e) {
             return false;
@@ -294,7 +306,7 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
     @Override
     public boolean setAudioSessionId(final int sessionId) {
         try {
-            mCurrentMediaPlayer.setAudioSessionId(sessionId);
+//            mCurrentMediaPlayer.setAudioSessionId(sessionId);
             return true;
         } catch (@NonNull IllegalArgumentException | IllegalStateException e) {
             return false;
@@ -311,39 +323,56 @@ public class MultiPlayer implements Playback, MediaPlayer.OnErrorListener, Media
         return mCurrentMediaPlayer.getAudioSessionId();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public boolean onError(final MediaPlayer mp, final int what, final int extra) {
+    public void onPlayerError(ExoPlaybackException error) {
         mIsInitialized = false;
         mCurrentMediaPlayer.release();
-        mCurrentMediaPlayer = new MediaPlayer();
-        mCurrentMediaPlayer.setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK);
+        mCurrentMediaPlayer = ExoPlayerFactory.newSimpleInstance(context);
         if (context != null) {
+            context.sendBroadcast(new Intent(MusicService.ACTION_ERROR));
             Toast.makeText(context, context.getResources().getString(R.string.unplayable_file), Toast.LENGTH_SHORT).show();
         }
-        return false;
+        Log.d(TAG, Constants.STATS_MUSIC_ERROR + error.getMessage());
+        EventLog.INSTANCE.log(Constants.STATS_MUSIC_ERROR + error.getMessage());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void onCompletion(final MediaPlayer mp) {
-        if (mp.equals(mCurrentMediaPlayer) && mNextMediaPlayer != null) {
-            mIsInitialized = false;
-            mCurrentMediaPlayer.release();
-            mCurrentMediaPlayer = mNextMediaPlayer;
-            mIsInitialized = true;
-            mNextMediaPlayer = null;
-            if (callbacks != null)
-                callbacks.onTrackWentToNext();
+    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+        if (playWhenReady) {
+            if (playbackState == Player.STATE_READY) {
+                playingTime = System.currentTimeMillis();
+                RewardManager.INSTANCE.setPlayingState(context, playingTime, true);
+            }
         } else {
-            if (callbacks != null)
-                callbacks.onTrackEnded();
+            if (playingTime > 0) {
+                RewardManager.INSTANCE.setPlayingState(context, playingTime, false);
+                playingTime = 0;
+            }
+        }
+        switch (playbackState) {
+            case Player.STATE_ENDED:
+                if (playWhenReady) {
+                    if (!seek) {
+                        RemoteConfig.INSTANCE.incFullPlayedCount();
+                        RewardManager.INSTANCE.addPlayCount(context);
+                    }
+                    seek = false;
+                    if (mNextMediaPlayer != null) {
+                        mIsInitialized = false;
+                        mCurrentMediaPlayer.release();
+                        mCurrentMediaPlayer = mNextMediaPlayer;
+                        mIsInitialized = true;
+                        mNextMediaPlayer = null;
+                        start();
+                        if (callbacks != null)
+                            callbacks.onTrackWentToNext();
+                    } else {
+                        if (callbacks != null)
+                            callbacks.onTrackEnded();
+                    }
+                }
+                break;
         }
     }
-
 
 }

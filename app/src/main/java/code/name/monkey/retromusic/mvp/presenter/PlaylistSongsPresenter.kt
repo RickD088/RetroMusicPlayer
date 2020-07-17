@@ -14,17 +14,19 @@
 
 package code.name.monkey.retromusic.mvp.presenter
 
+import code.name.monkey.retromusic.App
+import code.name.monkey.retromusic.Result.Error
+import code.name.monkey.retromusic.Result.Success
+import code.name.monkey.retromusic.abram.Constants
+import code.name.monkey.retromusic.loaders.LastAddedSongsLoader
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Playlist
-import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.mvp.BaseView
 import code.name.monkey.retromusic.mvp.Presenter
 import code.name.monkey.retromusic.mvp.PresenterImpl
 import code.name.monkey.retromusic.providers.interfaces.Repository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-
+import kotlinx.coroutines.*
+import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -32,13 +34,13 @@ import kotlin.coroutines.CoroutineContext
  */
 interface PlaylistSongsView : BaseView {
 
-    fun songs(songs: List<Song>)
+    fun songs(songs: List<CommonData>)
 }
 
 interface PlaylistSongsPresenter : Presenter<PlaylistSongsView> {
     fun loadPlaylistSongs(playlist: Playlist)
 
-    class PlaylistSongsPresenterImpl constructor(
+    class PlaylistSongsPresenterImpl @Inject constructor(
         private val repository: Repository
     ) : PresenterImpl<PlaylistSongsView>(), PlaylistSongsPresenter, CoroutineScope {
 
@@ -49,8 +51,20 @@ interface PlaylistSongsPresenter : Presenter<PlaylistSongsView> {
 
         override fun loadPlaylistSongs(playlist: Playlist) {
             launch {
-                val songs = repository.getPlaylistSongs(playlist)
-                view?.songs(songs)
+                when (val songs = repository.getPlaylistSongs(playlist)) {
+                    is Success -> withContext(Dispatchers.Main) {
+                        view?.let {
+                            val allSongs = mutableListOf<CommonData>()
+                            if (playlist.id == Constants.UI_DOWNLOAD_PLAYLIST_ID) {
+                                // abram 伪装成播放列表的下载项，需要特别填充数据
+                                allSongs.addAll(LastAddedSongsLoader.getDownloadSongs(App.getContext()))
+                            }
+                            allSongs.addAll(songs.data)
+                            it.songs(allSongs)
+                        }
+                    }
+                    is Error -> withContext(Dispatchers.Main) { view?.showEmptyView() }
+                }
             }
         }
 

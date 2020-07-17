@@ -29,15 +29,14 @@ class LastAddedShortcutType(context: Context) : BaseShortcutType(context) {
         get() = ShortcutInfo.Builder(
             context,
             id
-        ).setShortLabel(context.getString(R.string.app_shortcut_last_added_short)).setLongLabel(
-            context.getString(R.string.app_shortcut_last_added_long)
+        ).setShortLabel(context.getString(R.string.my_download)).setLongLabel(
+            "${context.getString(R.string.action_play)} ${context.getString(R.string.my_download)}"
         ).setIcon(
             AppShortcutIconGenerator.generateThemedIcon(
                 context,
-                R.drawable.ic_app_shortcut_last_added
+                R.drawable.ic_app_shortcut_download
             )
-        ).setIntent(getPlaySongsIntent(AppShortcutLauncherActivity.SHORTCUT_TYPE_LAST_ADDED))
-            .build()
+        ).setIntent(getPlaySongsIntent(AppShortcutLauncherActivity.SHORTCUT_TYPE_LAST_ADDED)).build()
 
     companion object {
 

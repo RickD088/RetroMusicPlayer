@@ -19,8 +19,11 @@ import android.database.Cursor
 import android.provider.MediaStore
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.model.Artist
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.providers.HistoryStore
 import code.name.monkey.retromusic.util.PreferenceUtil
+import java.lang.StringBuilder
 
 /**
  * Created by hemanths on 16/08/17.
@@ -32,8 +35,45 @@ object LastAddedSongsLoader {
         return SongLoader.getSongs(makeLastAddedCursor(context))
     }
 
+    fun getDownloadSongs(context: Context): ArrayList<CommonData> {
+        // 用于保存原始顺序
+        val order = arrayListOf<String>()
+        val rawList = SongLoader.getSongsFromDataBase(makeDownloadSongCursor(context, order))
+        val orderedList = arrayListOf<CommonData>()
+        // 恢复原始顺序
+        order.mapIndexed { index, songId ->
+            val found = rawList.find { it.getSongId().toString() == songId }
+            found?.let {
+                orderedList.add(it)
+            }
+        }
+        return orderedList
+    }
+
+    private fun makeDownloadSongCursor(context: Context, order: ArrayList<String>): Cursor? {
+        val downloadCursor = HistoryStore.getInstance(context).queryAllDownload()
+        val builder = StringBuilder()
+        if (downloadCursor.moveToFirst()) {
+            val id =
+                downloadCursor.getInt(downloadCursor.getColumnIndex(HistoryStore.DownloadStoreColumns.SONG_ID))
+            builder.append("(").append(id)
+            order.add(id.toString())
+            while (downloadCursor.moveToNext()) {
+                val songId =
+                    downloadCursor.getInt(downloadCursor.getColumnIndex(HistoryStore.DownloadStoreColumns.SONG_ID))
+                builder.append(",$songId")
+                order.add(songId.toString())
+            }
+            builder.append(")")
+            downloadCursor.close()
+            return HistoryStore.getInstance(context).queryRecentSongByIds(builder.toString())
+        }
+        return null
+    }
+
     private fun makeLastAddedCursor(context: Context): Cursor? {
-        val cutoff = PreferenceUtil.lastAddedCutoff
+        val cutoff = PreferenceUtil.getInstance(context).lastAddedCutoff
+
         return SongLoader.makeSongCursor(
             context,
             MediaStore.Audio.Media.DATE_ADDED + ">?",

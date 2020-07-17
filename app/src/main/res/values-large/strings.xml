@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="my_download">My Downloads</string>
+    <string name="save_failed">Failed to download</string>
+    <string name="network_unavailable">Network unavailable</string>
+    <string name="saved">Download completed</string>
+    <string name="file_exist">Downloaded already</string>
+    <string name="download">Download</string>
+    <string name="cached">Cached</string>
+    <string name="downloading">Downloading</string>
+    <string name="waiting_to_download">Waiting to download</string>
+    <string name="continue_downloading">Continue downloading</string>
+    <string name="online">Online</string>
+</resources>

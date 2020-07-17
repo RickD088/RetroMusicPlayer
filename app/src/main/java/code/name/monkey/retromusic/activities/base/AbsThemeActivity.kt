@@ -1,50 +1,47 @@
 package code.name.monkey.retromusic.activities.base
 
-import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.annotation.ColorInt
-import androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode
+import androidx.core.content.ContextCompat
 import code.name.monkey.appthemehelper.ATH
 import code.name.monkey.appthemehelper.ThemeStore
 import code.name.monkey.appthemehelper.common.ATHToolbarActivity
 import code.name.monkey.appthemehelper.util.ATHUtil
 import code.name.monkey.appthemehelper.util.ColorUtil
-import code.name.monkey.appthemehelper.util.MaterialDialogsUtil
+import code.name.monkey.appthemehelper.util.TintHelper
 import code.name.monkey.appthemehelper.util.VersionUtils
-import code.name.monkey.retromusic.LanguageContextWrapper
+import code.name.monkey.retromusic.App
 import code.name.monkey.retromusic.R
+import code.name.monkey.retromusic.mvp.presenter.RewardPresenter
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.RetroUtil
-import code.name.monkey.retromusic.util.theme.ThemeManager
-import java.util.*
+import code.name.monkey.retromusic.util.ThemeManager
+import javax.inject.Inject
 
 abstract class AbsThemeActivity : ATHToolbarActivity(), Runnable {
 
     private val handler = Handler()
+    @Inject
+    lateinit var rewardPresenter: RewardPresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        updateTheme()
+        setTheme(ThemeManager.getThemeResValue(this))
         hideStatusBar()
         super.onCreate(savedInstanceState)
         setImmersiveFullscreen()
         registerSystemUiVisibility()
         toggleScreenOn()
-        MaterialDialogsUtil.updateMaterialDialogsThemeSingleton(this)
-    }
-
-
-    private fun updateTheme() {
-        setTheme(ThemeManager.getThemeResValue(this))
-        setDefaultNightMode(ThemeManager.getNightMode(this))
+        App.musicComponent.inject(this)
     }
 
     private fun toggleScreenOn() {
-        if (PreferenceUtil.isScreenOnEnabled) {
+        if (PreferenceUtil.getInstance(this).isScreenOnEnabled) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -63,7 +60,7 @@ abstract class AbsThemeActivity : ATHToolbarActivity(), Runnable {
     }
 
     fun hideStatusBar() {
-        hideStatusBar(PreferenceUtil.isFullScreenMode)
+        hideStatusBar(PreferenceUtil.getInstance(this).fullScreenMode)
     }
 
     private fun hideStatusBar(fullscreen: Boolean) {
@@ -71,6 +68,18 @@ abstract class AbsThemeActivity : ATHToolbarActivity(), Runnable {
         if (statusBar != null) {
             statusBar.visibility = if (fullscreen) View.GONE else View.VISIBLE
         }
+    }
+
+    private fun changeBackgroundShape() {
+        var background: Drawable? = if (PreferenceUtil.getInstance(this).isRoundCorners)
+            ContextCompat.getDrawable(this, R.drawable.round_window)
+        else ContextCompat.getDrawable(this, R.drawable.square_window)
+        background =
+            TintHelper.createTintedDrawable(
+                background,
+                ATHUtil.resolveColor(this, android.R.attr.windowBackground)
+            )
+        window.setBackgroundDrawable(background)
     }
 
     fun setDrawUnderStatusBar() {
@@ -166,7 +175,7 @@ abstract class AbsThemeActivity : ATHToolbarActivity(), Runnable {
         val flags =
             (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
 
-        if (PreferenceUtil.isFullScreenMode) {
+        if (PreferenceUtil.getInstance(this).fullScreenMode) {
             window.decorView.systemUiVisibility = flags
         }
     }
@@ -196,12 +205,5 @@ abstract class AbsThemeActivity : ATHToolbarActivity(), Runnable {
             handler.postDelayed(this, 500)
         }
         return super.onKeyDown(keyCode, event)
-    }
-
-    override fun attachBaseContext(newBase: Context?) {
-        val code = PreferenceUtil.languageCode
-        if (code != "auto") {
-            super.attachBaseContext(LanguageContextWrapper.wrap(newBase, Locale(code)))
-        } else super.attachBaseContext(newBase)
     }
 }

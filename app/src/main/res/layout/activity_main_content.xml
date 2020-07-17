@@ -18,7 +18,6 @@
     </FrameLayout>
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/mainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -26,29 +25,113 @@
             android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:elevation="0dp"
+            app:elevation="0dp"
             app:liftOnScroll="true">
 
-            <FrameLayout
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/toolbarContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardCornerRadius="0dp"
+                app:cardUseCompatPadding="true"
                 app:layout_scrollFlags="scroll|enterAlways">
 
-                <androidx.appcompat.widget.Toolbar
-                    android:id="@+id/toolbar"
+                <LinearLayout
+                    android:id="@+id/money_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="?attr/colorSurface"
-                    app:popupTheme="?attr/toolbarPopupTheme"
-                    app:title="@string/app_name"
-                    app:titleTextAppearance="@style/ToolbarTextAppearanceNormal.Library"
-                    app:titleTextColor="?attr/colorControlNormal"
-                    tools:ignore="UnusedAttribute" />
+                    android:orientation="horizontal">
 
-                <ViewStub
-                    android:id="@+id/cab_stub"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/toolbar_height" />
-            </FrameLayout>
+                    <LinearLayout
+                        android:id="@+id/cash_layout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/toolbar_height"
+                        android:layout_marginEnd="20dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:background="@drawable/round_alpha_bg"
+                        app:layout_constraintEnd_toStartOf="@+id/score_layout"
+                        app:layout_constraintTop_toTopOf="@+id/score_layout">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/icon_dollar" />
+
+                        <TextView
+                            android:id="@+id/tv_cash"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="16dp"
+                            android:drawablePadding="5dp"
+                            android:gravity="center"
+                            android:textColor="?attr/giftCardTextColor"
+                            android:textSize="18dp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/score_layout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/toolbar_height"
+                        android:layout_marginEnd="20dp"
+                        android:background="@drawable/round_alpha_bg"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        app:layout_constraintRight_toRightOf="parent"
+                        app:layout_constraintTop_toTopOf="@id/btn_ad">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/icon_diamond" />
+
+                        <TextView
+                            android:id="@+id/tv_score"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="16dp"
+                            android:drawablePadding="5dp"
+                            android:gravity="center"
+                            android:textColor="?attr/giftCardTextColor"
+                            android:textSize="18dp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.Toolbar
+                        android:id="@+id/toolbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/toolbar_height"
+                        android:layout_gravity="center"
+                        android:layout_marginStart="20dp"
+                        android:background="@drawable/round_alpha_bg"
+                        app:popupTheme="?attr/toolbarPopupTheme"
+                        app:titleTextColor="?attr/colorControlNormal"
+                        app:titleTextAppearance="@style/TextViewHeadline6"
+                        tools:ignore="UnusedAttribute">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/appTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="@string/app_name"
+                            android:textColor="?attr/colorControlNormal"
+                            android:textAppearance="@style/TextViewHeadline6" />
+                    </androidx.appcompat.widget.Toolbar>
+
+                    <ViewStub
+                        android:id="@+id/cab_stub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/toolbar_height" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </com.google.android.material.appbar.AppBarLayout>
 
         <FrameLayout
@@ -56,5 +139,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>

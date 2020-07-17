@@ -49,7 +49,7 @@ class GenreAdapter(
     inner class ViewHolder(itemView: View) : MediaEntryViewHolder(itemView) {
         override fun onClick(v: View?) {
             super.onClick(v)
-            val genre = dataSet[layoutPosition]
+            val genre = dataSet[adapterPosition]
             NavigationUtil.goToGenre(activity, genre)
         }
     }

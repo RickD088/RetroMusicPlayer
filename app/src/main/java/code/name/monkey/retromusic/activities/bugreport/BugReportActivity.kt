@@ -28,7 +28,8 @@ import code.name.monkey.retromusic.activities.bugreport.model.github.ExtraInfo
 import code.name.monkey.retromusic.activities.bugreport.model.github.GithubLogin
 import code.name.monkey.retromusic.activities.bugreport.model.github.GithubTarget
 import code.name.monkey.retromusic.misc.DialogAsyncTask
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.callbacks.onCancel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.android.synthetic.main.activity_bug_report.*
@@ -216,7 +217,7 @@ open class BugReportActivity : AbsThemeActivity() {
         onSaveExtraInfo()
 
         val report = Report(bugTitle, bugDescription, deviceInfo, extraInfo)
-        val target = GithubTarget("h4h13", "RetroMusicPlayer")
+        val target = GithubTarget("retromusicapp", "RetroMusicPlayer")
 
         ReportIssueAsyncTask.report(this, report, target, login)
     }
@@ -277,25 +278,27 @@ open class BugReportActivity : AbsThemeActivity() {
 
             when (result) {
                 RESULT_SUCCESS -> tryToFinishActivity()
-                RESULT_BAD_CREDENTIALS -> MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.bug_report_failed)
-                    .setMessage(R.string.bug_report_failed_wrong_credentials)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show()
-                RESULT_INVALID_TOKEN -> MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.bug_report_failed)
-                    .setMessage(R.string.bug_report_failed_invalid_token)
-                    .setPositiveButton(android.R.string.ok, null).show()
-                RESULT_ISSUES_NOT_ENABLED -> MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.bug_report_failed)
-                    .setMessage(R.string.bug_report_failed_issues_not_available)
-                    .setPositiveButton(android.R.string.ok, null)
-
-                else -> MaterialAlertDialogBuilder(context)
-                    .setTitle(R.string.bug_report_failed)
-                    .setMessage(R.string.bug_report_failed_unknown)
-                    .setPositiveButton(android.R.string.ok) { _, _ -> tryToFinishActivity() }
-                    .setNegativeButton(android.R.string.cancel) { _, _ -> { tryToFinishActivity() } }
+                RESULT_BAD_CREDENTIALS -> MaterialDialog(context).show {
+                    title(R.string.bug_report_failed)
+                    message(R.string.bug_report_failed_wrong_credentials)
+                    positiveButton(android.R.string.ok)
+                }
+                RESULT_INVALID_TOKEN -> MaterialDialog(context).show {
+                    title(R.string.bug_report_failed)
+                    message(R.string.bug_report_failed_invalid_token)
+                    positiveButton(android.R.string.ok)
+                }
+                RESULT_ISSUES_NOT_ENABLED -> MaterialDialog(context).show {
+                    title(R.string.bug_report_failed)
+                    message(R.string.bug_report_failed_issues_not_available)
+                    positiveButton(android.R.string.ok)
+                }
+                else -> MaterialDialog(context).show {
+                    title(R.string.bug_report_failed)
+                    message(R.string.bug_report_failed_unknown)
+                    positiveButton(android.R.string.ok) { tryToFinishActivity() }
+                    onCancel { tryToFinishActivity() }
+                }
             }
         }
 
@@ -305,7 +308,6 @@ open class BugReportActivity : AbsThemeActivity() {
                 context.finish()
             }
         }
-
 
         companion object {
 
@@ -324,6 +326,6 @@ open class BugReportActivity : AbsThemeActivity() {
 
         private const val STATUS_BAD_CREDENTIALS = 401
         private const val STATUS_ISSUES_NOT_ENABLED = 410
-        private const val ISSUE_TRACKER_LINK = "https://github.com/h4h13/RetroMusicPlayer"
+        private const val ISSUE_TRACKER_LINK = "https://github.com/retromusicapp/RetroMusicPlayer"
     }
 }

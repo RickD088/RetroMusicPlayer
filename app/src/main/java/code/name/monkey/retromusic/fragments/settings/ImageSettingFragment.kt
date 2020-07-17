@@ -31,6 +31,7 @@ class ImageSettingFragment : AbsSettingsFragment() {
             setSummary(autoDownloadImagesPolicy, o)
             true
         }
+
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

@@ -24,7 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 import code.name.monkey.retromusic.R;
+import code.name.monkey.retromusic.extensions.ArrayListExKt;
 import code.name.monkey.retromusic.loaders.TopAndRecentlyPlayedTracksLoader;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Song;
 import code.name.monkey.retromusic.providers.SongPlayCountStore;
 
@@ -44,7 +46,7 @@ public class MyTopTracksPlaylist extends AbsSmartPlaylist {
     };
 
     public MyTopTracksPlaylist(@NonNull Context context) {
-        super(context.getString(R.string.my_top_tracks), R.drawable.ic_trending_up_white_24dp);
+        super(context.getString(R.string.favorites), R.drawable.ic_favorite_white_24dp);
     }
 
     protected MyTopTracksPlaylist(Parcel in) {
@@ -63,7 +65,7 @@ public class MyTopTracksPlaylist extends AbsSmartPlaylist {
 
     @NonNull
     @Override
-    public ArrayList<Song> getSongs(@NotNull @NonNull Context context) {
-        return TopAndRecentlyPlayedTracksLoader.INSTANCE.getTopTracks(context);
+    public ArrayList<CommonData> getSongs(@NotNull @NonNull Context context) {
+        return TopAndRecentlyPlayedTracksLoader.INSTANCE.getFavoriteSongs(context);
     }
 }

@@ -41,7 +41,6 @@ import com.bumptech.glide.request.target.Target
 
 class PlayingNotificationImpl : PlayingNotification() {
     private var target: Target<BitmapPaletteWrapper>? = null
-
     @Synchronized
     override fun update() {
         stopped = false
@@ -84,8 +83,13 @@ class PlayingNotificationImpl : PlayingNotification() {
                         glideAnimation: GlideAnimation<in BitmapPaletteWrapper>
                     ) {
                         update(
-                            resource.bitmap,
-                            RetroColorUtil.getColor(resource.palette, Color.TRANSPARENT)
+                            resource.bitmap, when {
+                                PreferenceUtil.getInstance(service).isDominantColor -> RetroColorUtil.getDominantColor(
+                                    resource.bitmap,
+                                    Color.TRANSPARENT
+                                )
+                                else -> RetroColorUtil.getColor(resource.palette, Color.TRANSPARENT)
+                            }
                         )
                     }
 
@@ -132,9 +136,9 @@ class PlayingNotificationImpl : PlayingNotification() {
                             .setLargeIcon(bitmapFinal)
                             .setContentIntent(clickIntent)
                             .setDeleteIntent(deleteIntent)
-                            .setContentTitle(Html.fromHtml("<b>" + song.title + "</b>"))
-                            .setContentText(song.artistName)
-                            .setSubText(Html.fromHtml("<b>" + song.albumName + "</b>"))
+                            .setContentTitle(Html.fromHtml("<b>" + song.getSongTitle() + "</b>"))
+                            .setContentText(song.getSongSinger())
+                            .setSubText(Html.fromHtml("<b>" + song.getSongAlbum() + "</b>"))
                             .setOngoing(isPlaying)
                             .setShowWhen(false)
                             .addAction(toggleFavorite)
@@ -149,8 +153,9 @@ class PlayingNotificationImpl : PlayingNotification() {
                                     .setShowActionsInCompactView(1, 2, 3)
                             )
                                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                            if (Build.VERSION.SDK_INT <=
-                                Build.VERSION_CODES.O && PreferenceUtil.isColoredNotification
+                            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O && PreferenceUtil.getInstance(
+                                    service
+                                ).coloredNotification()
                             ) {
                                 builder.color = color
                             }

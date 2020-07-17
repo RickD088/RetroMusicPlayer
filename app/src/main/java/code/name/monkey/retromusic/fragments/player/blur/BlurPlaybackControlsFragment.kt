@@ -1,6 +1,5 @@
 package code.name.monkey.retromusic.fragments.player.blur
 
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -9,8 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
-import android.widget.SeekBar
 import androidx.core.content.ContextCompat
 import code.name.monkey.appthemehelper.util.ColorUtil
 import code.name.monkey.appthemehelper.util.MaterialValueHelper
@@ -22,11 +19,9 @@ import code.name.monkey.retromusic.fragments.base.AbsPlayerControlsFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
-import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_blur_player_playback_controls.*
 
 class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
@@ -54,9 +49,9 @@ class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
         playPauseButton.setOnClickListener {
             if (MusicPlayerRemote.isPlaying) {
-                MusicPlayerRemote.pauseSong()
+                MusicPlayerRemote.pauseSong(activity)
             } else {
-                MusicPlayerRemote.resumePlaying()
+                MusicPlayerRemote.resumePlaying(activity)
             }
             showBonceAnimation()
         }
@@ -66,10 +61,14 @@ class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = String.format("%s • %s", song.artistName, song.albumName)
+        title.text = song.getSongTitle()
+        if (song.localSong()){
+            text.text = String.format("%s • %s", song.getLocalSong().artistName, song.getLocalSong().albumName)
+        }else if (song.cloudSong()){
+            text.text = requireContext().getString(R.string.online) // song.getCloudSong().channelTitle
+        }
 
-        if (PreferenceUtil.isSongInfo) {
+        if (PreferenceUtil.getInstance(requireContext()).isSongInfo) {
             songInfo.show()
             songInfo?.text = getSongInfo(song)
         } else {
@@ -111,7 +110,7 @@ class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
         updateShuffleState()
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
+    override fun setDark(color: Int) {
         lastPlaybackControlsColor = Color.WHITE
         lastDisabledPlaybackControlsColor =
             ContextCompat.getColor(requireContext(), R.color.md_grey_500)
@@ -164,8 +163,8 @@ class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {
@@ -256,29 +255,22 @@ class BlurPlaybackControlsFragment : AbsPlayerControlsFragment() {
         }
     }
 
-    override fun setUpProgressSlider() {
-        progressSlider.setOnSeekBarChangeListener(object : SimpleOnSeekbarChangeListener() {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    MusicPlayerRemote.seekTo(progress)
-                    onUpdateProgressViews(
-                        MusicPlayerRemote.songProgressMillis,
-                        MusicPlayerRemote.songDurationMillis
-                    )
-                }
-            }
-        })
-    }
-
     override fun onUpdateProgressViews(progress: Int, total: Int) {
-        progressSlider.max = total
-
-        val animator = ObjectAnimator.ofInt(progressSlider, "progress", progress)
-        animator.duration = SLIDER_ANIMATION_TIME
-        animator.interpolator = LinearInterpolator()
-        animator.start()
-
+        progressSlider.valueTo = total.toFloat()
+        progressSlider.value = progress.toFloat()
         songTotalTime.text = MusicUtil.getReadableDurationString(total.toLong())
         songCurrentProgress.text = MusicUtil.getReadableDurationString(progress.toLong())
+    }
+
+    override fun setUpProgressSlider() {
+        progressSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                MusicPlayerRemote.seekTo(value.toInt())
+                onUpdateProgressViews(
+                    MusicPlayerRemote.songProgressMillis,
+                    MusicPlayerRemote.songDurationMillis
+                )
+            }
+        }
     }
 }

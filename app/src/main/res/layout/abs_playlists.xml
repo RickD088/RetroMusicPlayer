@@ -11,7 +11,6 @@
         android:id="@+id/history"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
         app:layout_constraintEnd_toStartOf="@+id/lastAdded"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
@@ -23,8 +22,9 @@
             android:layout_width="@dimen/adaptive_icon_size"
             android:layout_height="@dimen/adaptive_icon_size"
             android:layout_gravity="center"
+            android:layout_marginTop="24dp"
             android:padding="@dimen/adaptive_icon_padding"
-            app:iconBackgroundColor="@color/md_blue_500"
+            app:iconBackgroundColor="@color/md_deep_purple_500"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -58,12 +58,28 @@
             android:layout_width="@dimen/adaptive_icon_size"
             android:layout_height="@dimen/adaptive_icon_size"
             android:layout_gravity="center"
+            android:layout_marginTop="24dp"
             android:padding="@dimen/adaptive_icon_padding"
-            app:iconBackgroundColor="@color/md_red_500"
+            app:iconBackgroundColor="@color/md_blue_500"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_library_add_white_24dp" />
+            app:srcCompat="@drawable/ic_file_download_white_24dp" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/unread_flag"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@drawable/bg_red_dot"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@color/mi_text_color_secondary_dark"
+            android:textSize="13sp"
+            android:translationX="6dp"
+            android:translationY="-6dp"
+            app:layout_constraintRight_toRightOf="@id/v2"
+            app:layout_constraintTop_toTopOf="@id/v2"
+            app:layout_constraintVertical_bias="0.5" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/materialTextView"
@@ -73,7 +89,7 @@
             android:ellipsize="end"
             android:gravity="center"
             android:paddingTop="8dp"
-            android:text="@string/last_added"
+            android:text="@string/my_download"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/v2" />
@@ -95,12 +111,13 @@
             android:layout_width="@dimen/adaptive_icon_size"
             android:layout_height="@dimen/adaptive_icon_size"
             android:layout_gravity="center"
+            android:layout_marginTop="24dp"
             android:padding="@dimen/adaptive_icon_padding"
-            app:iconBackgroundColor="@color/md_deep_purple_500"
+            app:iconBackgroundColor="@color/md_red_500"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_trending_up_white_24dp" />
+            app:srcCompat="@drawable/ic_favorite_white_24dp" />
 
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
@@ -109,7 +126,7 @@
             android:ellipsize="end"
             android:gravity="center"
             android:paddingTop="8dp"
-            android:text="@string/my_top_tracks"
+            android:text="@string/favorites"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/v3" />
@@ -131,6 +148,7 @@
             android:layout_width="@dimen/adaptive_icon_size"
             android:layout_height="@dimen/adaptive_icon_size"
             android:layout_gravity="center"
+            android:layout_marginTop="24dp"
             android:padding="@dimen/adaptive_icon_padding"
             app:iconBackgroundColor="@color/md_green_500"
             app:layout_constraintEnd_toEndOf="parent"
@@ -156,5 +174,5 @@
         android:id="@+id/shortcuts"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="history,lastAdded,topPlayed,actionShuffle" />
+        app:constraint_referenced_ids="history,lastAdded,actionShuffle" />
 </androidx.constraintlayout.widget.ConstraintLayout>

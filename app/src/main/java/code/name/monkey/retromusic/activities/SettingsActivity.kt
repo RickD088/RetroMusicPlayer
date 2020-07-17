@@ -4,17 +4,14 @@ import android.os.Bundle
 import android.view.MenuItem
 import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
-import code.name.monkey.appthemehelper.ThemeStore
-import code.name.monkey.appthemehelper.util.VersionUtils
+import code.name.monkey.appthemehelper.util.ATHUtil
+import code.name.monkey.appthemehelper.util.ToolbarContentTintHelper
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.base.AbsBaseActivity
-import code.name.monkey.retromusic.appshortcuts.DynamicShortcutManager
-import code.name.monkey.retromusic.extensions.applyToolbar
 import code.name.monkey.retromusic.fragments.settings.MainSettingsFragment
-import com.afollestad.materialdialogs.color.ColorChooserDialog
 import kotlinx.android.synthetic.main.activity_settings.*
 
-class SettingsActivity : AbsBaseActivity(), ColorChooserDialog.ColorCallback {
+class SettingsActivity : AbsBaseActivity() {
 
     private val fragmentManager = supportFragmentManager
 
@@ -25,6 +22,7 @@ class SettingsActivity : AbsBaseActivity(), ColorChooserDialog.ColorCallback {
         setStatusbarColorAuto()
         setNavigationbarColorAuto()
         setLightNavigationBar(true)
+
         setupToolbar()
 
         if (savedInstanceState == null) {
@@ -35,7 +33,12 @@ class SettingsActivity : AbsBaseActivity(), ColorChooserDialog.ColorCallback {
 
     private fun setupToolbar() {
         setTitle(R.string.action_settings)
-        applyToolbar(toolbar)
+        toolbar.apply {
+            setBackgroundColor(ATHUtil.resolveColor(this@SettingsActivity, R.attr.colorSurface))
+            setNavigationOnClickListener { onBackPressed() }
+            ToolbarContentTintHelper.colorBackButton(toolbar)
+        }
+        setSupportActionBar(toolbar)
     }
 
     fun setupFragment(fragment: Fragment, @StringRes titleName: Int) {
@@ -50,6 +53,7 @@ class SettingsActivity : AbsBaseActivity(), ColorChooserDialog.ColorCallback {
         fragmentTransaction.replace(R.id.contentFrame, fragment, fragment.tag)
         fragmentTransaction.addToBackStack(null)
         fragmentTransaction.commit()
+
         setTitle(titleName)
     }
 
@@ -72,20 +76,5 @@ class SettingsActivity : AbsBaseActivity(), ColorChooserDialog.ColorCallback {
 
     companion object {
         const val TAG: String = "SettingsActivity"
-    }
-
-    override fun onColorSelection(dialog: ColorChooserDialog, selectedColor: Int) {
-        when (dialog.title) {
-            R.string.accent_color -> {
-                ThemeStore.editTheme(this).accentColor(selectedColor).commit()
-                if (VersionUtils.hasNougatMR())
-                    DynamicShortcutManager(this).updateDynamicShortcuts()
-            }
-        }
-        recreate()
-    }
-
-    override fun onColorChooserDismissed(dialog: ColorChooserDialog) {
-
     }
 }

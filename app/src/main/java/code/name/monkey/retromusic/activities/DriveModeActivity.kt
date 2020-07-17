@@ -34,7 +34,6 @@ import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
 import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_drive_mode.*
 import kotlinx.coroutines.CoroutineScope
@@ -119,8 +118,8 @@ class DriveModeActivity : AbsMusicServiceActivity(), Callback {
 
     private fun setUpPrevNext() {
 
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(this) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(this) }
     }
 
     private fun setUpShuffleButton() {
@@ -207,18 +206,24 @@ class DriveModeActivity : AbsMusicServiceActivity(), Callback {
     }
 
     private fun updateSong() {
-        val song = MusicPlayerRemote.currentSong
+        val data = MusicPlayerRemote.currentSong
+        if (data.localSong()) {
+            val song = data.getLocalSong()
+            songTitle.text = song.title
+            songText.text = song.artistName
 
-        songTitle.text = song.title
-        songText.text = song.artistName
-
-        SongGlideRequest.Builder.from(Glide.with(this), song)
+        } else if (data.cloudSong()) {
+            val song = data.getCloudSong()
+            songTitle.text = song.songName
+            songText.text = song.singerName
+        }
+        SongGlideRequest.Builder.from(Glide.with(this), data)
             .checkIgnoreMediaStore(this)
             .generatePalette(this)
             .build()
             .transform(BlurTransformation.Builder(this).build())
             .into(object : RetroMusicColoredTarget(image) {
-                override fun onColorReady(color: MediaNotificationProcessor) {
+                override fun onColorReady(color: Int) {
                 }
             })
     }

@@ -89,16 +89,6 @@ public class PopupBackground extends Drawable {
     }
 
     @Override
-    public void setAlpha(int alpha) {
-
-    }
-
-    @Override
-    public void setColorFilter(@Nullable ColorFilter colorFilter) {
-
-    }
-
-    @Override
     public boolean getPadding(@NonNull Rect padding) {
         if (needMirroring()) {
             padding.set(mPaddingEnd, 0, mPaddingStart, 0);
@@ -119,6 +109,13 @@ public class PopupBackground extends Drawable {
         return true;
     }
 
+    @Override
+    public void setAlpha(int alpha) {
+    }
+
+    @Override
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+    }
 
     @Override
     protected void onBoundsChange(@NonNull Rect bounds) {

@@ -20,7 +20,6 @@ import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.TwoStatePreference
-import code.name.monkey.retromusic.CLASSIC_NOTIFICATION
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.util.PreferenceUtil
 
@@ -32,7 +31,7 @@ import code.name.monkey.retromusic.util.PreferenceUtil
 class NotificationSettingsFragment : AbsSettingsFragment(),
     SharedPreferences.OnSharedPreferenceChangeListener {
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if (key == CLASSIC_NOTIFICATION) {
+        if (key == PreferenceUtil.CLASSIC_NOTIFICATION) {
             if (VERSION.SDK_INT >= VERSION_CODES.O) {
                 findPreference<Preference>("colored_notification")?.isEnabled =
                     sharedPreferences?.getBoolean(key, false)!!
@@ -47,10 +46,11 @@ class NotificationSettingsFragment : AbsSettingsFragment(),
             classicNotification?.isVisible = false
         } else {
             classicNotification?.apply {
-                isChecked = PreferenceUtil.isClassicNotification
+                isChecked = PreferenceUtil.getInstance(requireContext()).classicNotification()
                 setOnPreferenceChangeListener { _, newValue ->
                     // Save preference
-                    PreferenceUtil.isClassicNotification = newValue as Boolean
+                    PreferenceUtil.getInstance(requireContext())
+                        .setClassicNotification(newValue as Boolean)
                     invalidateSettings()
                     true
                 }
@@ -59,12 +59,14 @@ class NotificationSettingsFragment : AbsSettingsFragment(),
 
         val coloredNotification: TwoStatePreference? = findPreference("colored_notification")
         if (VERSION.SDK_INT >= VERSION_CODES.O) {
-            coloredNotification?.isEnabled = PreferenceUtil.isClassicNotification
+            coloredNotification?.isEnabled =
+                PreferenceUtil.getInstance(requireContext()).classicNotification()
         } else {
             coloredNotification?.apply {
-                isChecked = PreferenceUtil.isColoredNotification
+                isChecked = PreferenceUtil.getInstance(requireContext()).coloredNotification()
                 setOnPreferenceChangeListener { _, newValue ->
-                    PreferenceUtil.isColoredNotification = newValue as Boolean
+                    PreferenceUtil.getInstance(requireContext())
+                        .setColoredNotification(newValue as Boolean)
                     true
                 }
             }
@@ -73,12 +75,13 @@ class NotificationSettingsFragment : AbsSettingsFragment(),
 
     override fun onResume() {
         super.onResume()
-        PreferenceUtil.registerOnSharedPreferenceChangedListener(this)
+        PreferenceUtil.getInstance(requireContext()).registerOnSharedPreferenceChangedListener(this)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        PreferenceUtil.unregisterOnSharedPreferenceChangedListener(this)
+        PreferenceUtil.getInstance(requireContext())
+            .unregisterOnSharedPreferenceChangedListener(this)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

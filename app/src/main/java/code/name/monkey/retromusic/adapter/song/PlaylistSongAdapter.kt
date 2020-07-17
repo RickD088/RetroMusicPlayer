@@ -7,23 +7,23 @@ import androidx.appcompat.app.AppCompatActivity
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.interfaces.CabHolder
-import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.util.NavigationUtil
 import com.google.android.material.button.MaterialButton
 
 open class PlaylistSongAdapter(
-    activity: AppCompatActivity,
-    dataSet: MutableList<Song>,
-    itemLayoutRes: Int,
-    cabHolder: CabHolder?
+        activity: AppCompatActivity,
+        dataSet: MutableList<CommonData>,
+        itemLayoutRes: Int,
+        cabHolder: CabHolder?
 ) : AbsOffsetSongAdapter(activity, dataSet, itemLayoutRes, cabHolder) {
 
     init {
         this.setMultiSelectMenuRes(R.menu.menu_cannot_delete_single_songs_playlist_songs_selection)
     }
 
-    override fun createViewHolder(view: View): SongAdapter.ViewHolder {
-        return ViewHolder(view)
+    override fun createViewHolder(view: View, type: Int): SongAdapter.ViewHolder {
+        return ViewHolder(view, type)
     }
 
     override fun onBindViewHolder(holder: SongAdapter.ViewHolder, position: Int) {
@@ -31,12 +31,12 @@ open class PlaylistSongAdapter(
             val viewHolder = holder as ViewHolder
             viewHolder.playAction?.let {
                 it.setOnClickListener {
-                    MusicPlayerRemote.openQueue(dataSet, 0, true)
+                    MusicPlayerRemote.openQueue(activity, dataSet, 0, true)
                 }
             }
             viewHolder.shuffleAction?.let {
                 it.setOnClickListener {
-                    MusicPlayerRemote.openAndShuffleQueue(dataSet, true)
+                    MusicPlayerRemote.openAndShuffleQueue(activity, dataSet, true)
                 }
             }
         } else {
@@ -44,25 +44,37 @@ open class PlaylistSongAdapter(
         }
     }
 
-    open inner class ViewHolder(itemView: View) : AbsOffsetSongAdapter.ViewHolder(itemView) {
+    open inner class ViewHolder(itemView: View, val type: Int) :
+            AbsOffsetSongAdapter.ViewHolder(itemView, type) {
 
         val playAction: MaterialButton? = itemView.findViewById(R.id.playAction)
         val shuffleAction: MaterialButton? = itemView.findViewById(R.id.shuffleAction)
 
         override var songMenuRes: Int
-            get() = R.menu.menu_item_cannot_delete_single_songs_playlist_song
+            get() = if (type == CommonData.TYPE_CLOUD_SONG) {
+                R.menu.menu_item_cannot_delete_single_cloud_songs_playlist_song
+            } else {
+                R.menu.menu_item_cannot_delete_single_songs_playlist_song
+            }
             set(value) {
                 super.songMenuRes = value
             }
 
         override fun onSongMenuItemClick(item: MenuItem): Boolean {
             if (item.itemId == R.id.action_go_to_album) {
-                val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
-                    activity,
-                    imageContainerCard ?: image,
-                    activity.getString(R.string.transition_album_art)
-                )
-                NavigationUtil.goToAlbumOptions(activity, song.albumId, activityOptions)
+                if (song.localSong()) {
+                    val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
+                            activity,
+                            imageContainerCard ?: image,
+                            "${activity.getString(R.string.transition_album_art)}_${song.getLocalSong().albumId}"
+                    )
+                    NavigationUtil.goToAlbumOptions(
+                            activity,
+                            song.getLocalSong().albumId,
+                            song,
+                            activityOptions
+                    )
+                }
                 return true
             }
             return super.onSongMenuItemClick(item)

@@ -48,8 +48,10 @@ class SynchronizedLyricsLRC extends AbsSynchronizedLyrics {
                 try {
                     String attr = attrMatcher.group(1).toLowerCase().trim();
                     String value = attrMatcher.group(2).toLowerCase().trim();
-                    if ("offset".equals(attr)) {
-                        this.offset = Integer.parseInt(value);
+                    switch (attr) {
+                        case "offset":
+                            this.offset = Integer.parseInt(value);
+                            break;
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();

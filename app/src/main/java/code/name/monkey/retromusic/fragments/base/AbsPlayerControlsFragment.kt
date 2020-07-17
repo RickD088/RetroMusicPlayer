@@ -7,9 +7,7 @@ import android.view.animation.DecelerateInterpolator
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.VolumeFragment
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 
 /**
  * Created by hemanths on 24/09/17.
@@ -28,7 +26,7 @@ abstract class AbsPlayerControlsFragment : AbsMusicServiceFragment(),
 
     protected abstract fun setUpProgressSlider()
 
-    abstract fun setColor(color: MediaNotificationProcessor)
+    abstract fun setDark(color: Int)
 
     fun showBonceAnimation(view: View) {
         view.apply {
@@ -63,7 +61,7 @@ abstract class AbsPlayerControlsFragment : AbsMusicServiceFragment(),
     protected var volumeFragment: VolumeFragment? = null
 
     private fun hideVolumeIfAvailable() {
-        if (PreferenceUtil.isVolumeVisibilityMode) {
+        if (PreferenceUtil.getInstance(requireContext()).volumeToggle) {
             childFragmentManager.beginTransaction()
                 .replace(R.id.volumeFragmentContainer, VolumeFragment()).commit()
             childFragmentManager.executePendingTransactions()

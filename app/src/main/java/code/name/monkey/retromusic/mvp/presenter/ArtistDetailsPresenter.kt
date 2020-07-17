@@ -14,18 +14,80 @@
 
 package code.name.monkey.retromusic.mvp.presenter
 
-import code.name.monkey.retromusic.model.Artist
+import code.name.monkey.retromusic.Result.Error
+import code.name.monkey.retromusic.Result.Success
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.mvp.BaseView
-import code.name.monkey.retromusic.rest.model.LastFmArtist
+import code.name.monkey.retromusic.mvp.Presenter
+import code.name.monkey.retromusic.mvp.PresenterImpl
+import code.name.monkey.retromusic.providers.interfaces.Repository
+import code.name.monkey.retromusic.rest.lastfm.model.LastFmArtist
+import kotlinx.coroutines.*
+import java.util.*
+import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by hemanths on 20/08/17.
  */
 interface ArtistDetailsView : BaseView {
 
-    fun artist(artist: Artist)
+    fun artist(artist: CommonData)
 
     fun artistInfo(lastFmArtist: LastFmArtist?)
 
     fun complete()
+}
+
+interface ArtistDetailsPresenter : Presenter<ArtistDetailsView> {
+
+    fun loadArtist(artistId: Int, local: Boolean = true)
+
+    fun loadBiography(
+        name: String,
+        lang: String? = Locale.getDefault().language,
+        cache: String?
+    )
+
+    class ArtistDetailsPresenterImpl @Inject constructor(
+        private val repository: Repository
+    ) : PresenterImpl<ArtistDetailsView>(), ArtistDetailsPresenter, CoroutineScope {
+
+        override val coroutineContext: CoroutineContext
+            get() = Dispatchers.IO + job
+
+        private val job = Job()
+
+        override fun loadBiography(name: String, lang: String?, cache: String?) {
+            launch {
+                when (val result = repository.artistInfo(name, lang, cache)) {
+                    is Success -> withContext(Dispatchers.Main) { view?.artistInfo(result.data) }
+                    is Error -> withContext(Dispatchers.Main) {}
+                }
+            }
+        }
+
+        override fun loadArtist(artistId: Int, local: Boolean) {
+            launch {
+                if (local) {
+                    when (val result = repository.artistById(artistId)) {
+                        is Success -> withContext(Dispatchers.Main) { view?.artist(result.data.convertToCommonData()) }
+                        is Error -> withContext(Dispatchers.Main) { view?.showEmptyView() }
+                    }
+                } else {
+                    when (val result = repository.loadArtist(artistId)) {
+                        is Success -> withContext(Dispatchers.Main) {
+                            view?.artist(result.data.convertToCommonData())
+                        }
+                        is Error -> withContext(Dispatchers.Main) { view?.showEmptyView() }
+                    }
+                }
+            }
+        }
+
+        override fun detachView() {
+            super.detachView()
+            job.cancel()
+        }
+    }
 }

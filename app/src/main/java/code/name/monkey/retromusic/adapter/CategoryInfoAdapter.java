@@ -42,7 +42,8 @@ public class CategoryInfoAdapter extends RecyclerView.Adapter<CategoryInfoAdapte
     private List<CategoryInfo> categoryInfos;
     private ItemTouchHelper touchHelper;
 
-    public CategoryInfoAdapter() {
+    public CategoryInfoAdapter(@NonNull List<CategoryInfo> categoryInfos) {
+        this.categoryInfos = categoryInfos;
         SwipeAndDragHelper swipeAndDragHelper = new SwipeAndDragHelper(this);
         touchHelper = new ItemTouchHelper(swipeAndDragHelper);
     }
@@ -121,9 +122,12 @@ public class CategoryInfoAdapter extends RecyclerView.Adapter<CategoryInfoAdapte
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        private MaterialCheckBox checkBox;
-        private View dragView;
-        private TextView title;
+
+        MaterialCheckBox checkBox;
+
+        View dragView;
+
+        TextView title;
 
         ViewHolder(View view) {
             super(view);

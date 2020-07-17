@@ -14,33 +14,27 @@
 
 package code.name.monkey.retromusic.fragments.player.lockscreen
 
-import android.animation.ObjectAnimator
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
-import android.widget.SeekBar
 import code.name.monkey.appthemehelper.util.ATHUtil
 import code.name.monkey.appthemehelper.util.ColorUtil
 import code.name.monkey.appthemehelper.util.MaterialValueHelper
 import code.name.monkey.appthemehelper.util.TintHelper
 import code.name.monkey.retromusic.R
-import code.name.monkey.retromusic.extensions.applyColor
 import code.name.monkey.retromusic.extensions.ripAlpha
 import code.name.monkey.retromusic.extensions.textColorSecondary
 import code.name.monkey.retromusic.fragments.base.AbsPlayerControlsFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
-import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
+import code.name.monkey.retromusic.util.ViewUtil
 import kotlinx.android.synthetic.main.fragment_lock_screen_playback_controls.*
 
 /**
@@ -73,8 +67,12 @@ class LockScreenPlayerControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = String.format("%s - %s", song.artistName, song.albumName)
+        title.text = song.getSongTitle()
+        if (song.localSong()){
+            text.text = String.format("%s - %s", song.getLocalSong().artistName, song.getLocalSong().albumName)
+        }else if (song.cloudSong()){
+            text.text = requireContext().getString(R.string.online) // song.getCloudSong().channelTitle
+        }
     }
 
     override fun onResume() {
@@ -111,7 +109,7 @@ class LockScreenPlayerControlsFragment : AbsPlayerControlsFragment() {
         updateShuffleState()
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
+    override fun setDark(color: Int) {
 
         val colorBg = ATHUtil.resolveColor(requireContext(), android.R.attr.colorBackground)
         if (ColorUtil.isColorLight(colorBg)) {
@@ -126,14 +124,14 @@ class LockScreenPlayerControlsFragment : AbsPlayerControlsFragment() {
                 MaterialValueHelper.getPrimaryDisabledTextColor(requireContext(), false)
         }
 
-        val colorFinal = if (PreferenceUtil.isAdaptiveColor) {
-            color.primaryTextColor
+        val colorFinal = if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            color
         } else {
-            textColorSecondary()
+            textColorSecondary(requireContext())
         }.ripAlpha()
 
         volumeFragment?.setTintable(colorFinal)
-        progressSlider.applyColor(colorFinal)
+        ViewUtil.setProgressDrawable(progressSlider, colorFinal, true)
 
         updateRepeatState()
         updateShuffleState()
@@ -172,8 +170,8 @@ class LockScreenPlayerControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {
@@ -241,29 +239,22 @@ class LockScreenPlayerControlsFragment : AbsPlayerControlsFragment() {
         }
     }
 
-    override fun setUpProgressSlider() {
-        progressSlider.setOnSeekBarChangeListener(object : SimpleOnSeekbarChangeListener() {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    MusicPlayerRemote.seekTo(progress)
-                    onUpdateProgressViews(
-                        MusicPlayerRemote.songProgressMillis,
-                        MusicPlayerRemote.songDurationMillis
-                    )
-                }
-            }
-        })
-    }
-
     override fun onUpdateProgressViews(progress: Int, total: Int) {
-        progressSlider.max = total
-
-        val animator = ObjectAnimator.ofInt(progressSlider, "progress", progress)
-        animator.duration = SLIDER_ANIMATION_TIME
-        animator.interpolator = LinearInterpolator()
-        animator.start()
-
+        progressSlider.valueTo = total.toFloat()
+        progressSlider.value = progress.toFloat()
         songTotalTime.text = MusicUtil.getReadableDurationString(total.toLong())
         songCurrentProgress.text = MusicUtil.getReadableDurationString(progress.toLong())
+    }
+
+    override fun setUpProgressSlider() {
+        progressSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                MusicPlayerRemote.seekTo(value.toInt())
+                onUpdateProgressViews(
+                    MusicPlayerRemote.songProgressMillis,
+                    MusicPlayerRemote.songDurationMillis
+                )
+            }
+        }
     }
 }

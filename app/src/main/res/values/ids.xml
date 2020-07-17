@@ -2,10 +2,10 @@
 <resources>
     <item name="action_new_playlist" type="id" />
     <item name="action_settings" type="id" />
-    <item name="action_mic" type="id" />
     <item name="action_search" type="id" />
     <item name="action_show_lyrics" type="id" />
     <item name="action_genre" type="id" />
+    <item name="action_album" type="id" />
     <item name="action_playing_queue" type="id" />
     <item name="action_album_sort_order_asc" type="id" />
     <item name="action_album_sort_order_desc" type="id" />

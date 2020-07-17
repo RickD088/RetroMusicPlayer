@@ -20,12 +20,16 @@ import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 
+import code.name.monkey.retromusic.extensions.ArrayListExKt;
+import code.name.monkey.retromusic.interfaces.CommonDataConverter;
 import code.name.monkey.retromusic.loaders.PlaylistSongsLoader;
 
 
-public class Playlist implements Parcelable {
+public class Playlist implements Parcelable, CommonDataConverter {
 
     public static final Creator<Playlist> CREATOR = new Creator<Playlist>() {
         public Playlist createFromParcel(Parcel source) {
@@ -37,23 +41,28 @@ public class Playlist implements Parcelable {
         }
     };
 
-    public final int id;
+    public final long id;
 
     public final String name;
 
-    public Playlist(final int id, final String name) {
+    public final String songIds;
+
+    public Playlist(final long id, final String name, final String songIds) {
         this.id = id;
         this.name = name;
+        this.songIds = songIds;
     }
 
     public Playlist() {
         this.id = -1;
         this.name = "";
+        this.songIds = "";
     }
 
     protected Playlist(Parcel in) {
-        this.id = in.readInt();
+        this.id = in.readLong();
         this.name = in.readString();
+        this.songIds = in.readString();
     }
 
     @Override
@@ -80,16 +89,16 @@ public class Playlist implements Parcelable {
     }
 
     @NonNull
-    public ArrayList<Song> getSongs(@NonNull Context context) {
+    public ArrayList<CommonData> getSongs(@NonNull Context context) {
         // this default implementation covers static playlists
-        return PlaylistSongsLoader.INSTANCE.getPlaylistSongList(context, id);
+        return PlaylistSongsLoader.INSTANCE.getPlaylistSongsFromDb(context, id);
     }
 
     @Override
     public int hashCode() {
-        int result = id;
+        long result = id;
         result = 31 * result + (name != null ? name.hashCode() : 0);
-        return result;
+        return (int) result;
     }
 
     @Override
@@ -97,14 +106,21 @@ public class Playlist implements Parcelable {
         return "Playlist{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", songIds='" + songIds + '\'' +
                 '}';
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(this.id);
+        dest.writeLong(this.id);
         dest.writeString(this.name);
+        dest.writeString(this.songIds);
     }
 
 
+    @NotNull
+    @Override
+    public CommonData convertToCommonData() {
+        return new CommonData(CommonData.TYPE_LOCAL_PLAYLIST, this, null);
+    }
 }

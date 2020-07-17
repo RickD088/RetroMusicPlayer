@@ -14,16 +14,15 @@
 
 package code.name.monkey.retromusic.preferences
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.util.AttributeSet
-import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat.SRC_IN
-import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
+import androidx.preference.PreferenceDialogFragmentCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEDialogPreference
@@ -32,54 +31,93 @@ import code.name.monkey.retromusic.adapter.CategoryInfoAdapter
 import code.name.monkey.retromusic.extensions.colorControlNormal
 import code.name.monkey.retromusic.model.CategoryInfo
 import code.name.monkey.retromusic.util.PreferenceUtil
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.customview.customView
+import java.util.*
 
 class LibraryPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
-    defStyleRes: Int = 0
-) : ATEDialogPreference(context, attrs, defStyleAttr, defStyleRes) {
+    defStyleAttr: Int = -1,
+    defStyleRes: Int = -1
+) :
+    ATEDialogPreference(context, attrs, defStyleAttr, defStyleRes) {
+
     init {
-        icon?.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-            context.colorControlNormal(),
-            SRC_IN
-        )
+        icon?.colorFilter =
+            BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                colorControlNormal(context),
+                SRC_IN
+            )
     }
 }
 
-class LibraryPreferenceDialog : DialogFragment() {
+class LibraryPreferenceDialog : PreferenceDialogFragmentCompat() {
 
-    @SuppressLint("InflateParams")
+    override fun onDialogClosed(positiveResult: Boolean) {
+    }
+
+    lateinit var adapter: CategoryInfoAdapter
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val view = LayoutInflater.from(requireContext())
-            .inflate(R.layout.preference_dialog_library_categories, null)
+        val view = requireActivity().layoutInflater.inflate(
+            R.layout.preference_dialog_library_categories,
+            null
+        )
 
-        val categoryAdapter = CategoryInfoAdapter()
-        categoryAdapter.categoryInfos = PreferenceUtil.libraryCategory
+        val categoryInfos: List<CategoryInfo> = if (savedInstanceState != null) {
+            savedInstanceState.getParcelableArrayList(PreferenceUtil.LIBRARY_CATEGORIES)!!
+        } else {
+            PreferenceUtil.getInstance(requireContext()).libraryCategoryInfos
+        }
+        adapter = CategoryInfoAdapter(categoryInfos)
+
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(activity)
-        recyclerView.adapter = categoryAdapter
-        categoryAdapter.attachToRecyclerView(recyclerView)
+        recyclerView.adapter = adapter
 
+        adapter.attachToRecyclerView(recyclerView)
 
-        return MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-        )
-            .setTitle(R.string.library_categories)
-            .setNeutralButton(
-                R.string.reset_action
-            ) { _, _ ->
-                categoryAdapter.categoryInfos = PreferenceUtil.defaultCategories
+        return MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT))
+            .title(R.string.library_categories)
+            .cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+            .customView(view = view)
+            .positiveButton(android.R.string.ok) {
+                updateCategories(adapter.categoryInfos)
+                dismissDialog()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(
-                android.R.string.ok
-            ) { _, _ -> updateCategories(categoryAdapter.categoryInfos) }
-            .setView(view)
-            .create()
+            .negativeButton(android.R.string.cancel) {
+                dismissDialog()
+            }
+            .neutralButton(R.string.reset_action) {
+                adapter.categoryInfos =
+                    PreferenceUtil.getInstance(requireContext()).defaultLibraryCategoryInfos
+            }
+            .noAutoDismiss()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelableArrayList(
+            PreferenceUtil.LIBRARY_CATEGORIES,
+            ArrayList(adapter.categoryInfos)
+        )
+    }
+
+    override fun show(manager: FragmentManager, tag: String?) {
+        try {
+            super.show(manager, tag)
+        } catch (ignore: IllegalStateException) {
+            ignore.printStackTrace()
+        }
+    }
+
+    private fun dismissDialog() {
+        if (activity != null && !requireActivity().isFinishing) {
+            dismissAllowingStateLoss()
+        }
     }
 
     private fun updateCategories(categories: List<CategoryInfo>) {
@@ -88,7 +126,7 @@ class LibraryPreferenceDialog : DialogFragment() {
             Toast.makeText(context, "Not more than 5 items", Toast.LENGTH_SHORT).show()
             return
         }
-        PreferenceUtil.libraryCategory = categories
+        PreferenceUtil.getInstance(requireContext()).libraryCategoryInfos = categories
     }
 
     private fun getSelected(categories: List<CategoryInfo>): Int {
@@ -101,8 +139,13 @@ class LibraryPreferenceDialog : DialogFragment() {
     }
 
     companion object {
-        fun newInstance(): LibraryPreferenceDialog {
-            return LibraryPreferenceDialog()
+
+        fun newInstance(key: String): LibraryPreferenceDialog {
+            val bundle = Bundle()
+            bundle.putString(ARG_KEY, key)
+            val fragment = LibraryPreferenceDialog()
+            fragment.arguments = bundle
+            return fragment
         }
     }
 }

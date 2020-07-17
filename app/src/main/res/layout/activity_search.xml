@@ -61,7 +61,7 @@
                         android:inputType="text|textAutoComplete"
                         android:textAppearance="@style/TextViewSubtitle1">
 
-                        <requestFocus />
+                    <!-- <requestFocus /> -->
                     </com.google.android.material.textfield.TextInputEditText>
 
                     <FrameLayout
@@ -92,7 +92,17 @@
                     </FrameLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <com.zhy.view.flowlayout.TagFlowLayout
+                android:id="@+id/tagFlowLayout"
+                app:max_select="1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:visibility="visible"
+                android:padding="20dp" />
         </com.google.android.material.appbar.AppBarLayout>
+
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@android:id/empty"
@@ -124,5 +134,6 @@
             android:text="@string/keyboard"
             android:textAppearance="@style/TextViewHeadline6"
             app:icon="@drawable/ic_keyboard_white_24dp" />
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>

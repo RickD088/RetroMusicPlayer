@@ -26,7 +26,7 @@
         android:background="?attr/colorSurface"
         app:behavior_hideable="false"
         app:behavior_peekHeight="0dp"
-        app:layout_behavior="code.name.monkey.retromusic.RetroBottomSheetBehavior">
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <FrameLayout
             android:id="@+id/playerFragmentContainer"
@@ -51,8 +51,8 @@
         android:visibility="gone"
         app:itemHorizontalTranslationEnabled="false"
         app:itemIconTint="@drawable/bottom_navigation_item_colors"
-        app:itemTextAppearanceActive="@style/BottomSheetItemTextAppearance"
-        app:itemTextAppearanceInactive="@style/BottomSheetItemTextAppearance"
+        app:itemTextAppearanceActive="@style/BottomSheetItemTextAppearanceActive"
+        app:itemTextAppearanceInactive="@style/BottomSheetItemTextAppearanceInactive"
         app:itemTextColor="@drawable/bottom_navigation_item_colors"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation_main"

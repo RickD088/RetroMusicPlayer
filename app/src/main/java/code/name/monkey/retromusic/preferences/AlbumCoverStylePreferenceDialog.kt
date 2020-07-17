@@ -27,7 +27,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat.SRC_IN
-import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
+import androidx.preference.PreferenceDialogFragmentCompat
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEDialogPreference
@@ -39,8 +40,10 @@ import code.name.monkey.retromusic.fragments.AlbumCoverStyle.*
 import code.name.monkey.retromusic.util.NavigationUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.ViewUtil
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.customview.customView
 import com.bumptech.glide.Glide
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class AlbumCoverStylePreference @JvmOverloads constructor(
     context: Context,
@@ -58,16 +61,26 @@ class AlbumCoverStylePreference @JvmOverloads constructor(
     init {
         icon?.colorFilter =
             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                context.colorControlNormal(),
+                colorControlNormal(context),
                 SRC_IN
             )
     }
 }
 
-class AlbumCoverStylePreferenceDialog : DialogFragment(),
+class AlbumCoverStylePreferenceDialog : PreferenceDialogFragmentCompat(),
     ViewPager.OnPageChangeListener {
+    override fun onDialogClosed(positiveResult: Boolean) {
+    }
 
     private var viewPagerPosition: Int = 0
+
+    override fun show(manager: FragmentManager, tag: String?) {
+        try {
+            super.show(manager, tag)
+        } catch (ignore: IllegalStateException) {
+            ignore.printStackTrace()
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         @SuppressLint("InflateParams") val view =
@@ -77,23 +90,25 @@ class AlbumCoverStylePreferenceDialog : DialogFragment(),
         viewPager.adapter = AlbumCoverStyleAdapter(requireContext())
         viewPager.addOnPageChangeListener(this)
         viewPager.pageMargin = ViewUtil.convertDpToPixel(32f, resources).toInt()
-        viewPager.currentItem = PreferenceUtil.albumCoverStyle.ordinal
+        viewPager.currentItem = PreferenceUtil.getInstance(requireContext()).albumCoverStyle.ordinal
 
-        return MaterialAlertDialogBuilder(requireActivity(),
-            R.style.ThemeOverlay_MaterialComponents_Dialog_Alert)
-            .setTitle(R.string.pref_title_album_cover_style)
-            .setPositiveButton(R.string.set) { _, _ ->
+        return MaterialDialog(requireActivity()).show {
+            title(R.string.pref_title_album_cover_style)
+            cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+            positiveButton(R.string.set) {
                 val coverStyle = values()[viewPagerPosition]
                 if (isAlbumCoverStyle(coverStyle)) {
                     val result = getString(coverStyle.titleRes) + " theme is Pro version feature."
                     Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                     NavigationUtil.goToProVersion(requireActivity())
                 } else {
-                    PreferenceUtil.albumCoverStyle = coverStyle
+                    PreferenceUtil.getInstance(requireContext()).albumCoverStyle = coverStyle
                 }
+
             }
-            .setView(view)
-            .create()
+            negativeButton(android.R.string.cancel)
+            customView(view = view, scrollable = false, noVerticalPadding = false)
+        }
     }
 
     override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
@@ -123,7 +138,8 @@ class AlbumCoverStylePreferenceDialog : DialogFragment(),
             val image = layout.findViewById<ImageView>(R.id.image)
             val title = layout.findViewById<TextView>(R.id.title)
             val proText = layout.findViewById<TextView>(R.id.proText)
-            Glide.with(context).load(albumCoverStyle.drawableResId).into(image)
+            Glide.with(context).load(albumCoverStyle.drawableResId)
+                .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false).into(image)
             title.setText(albumCoverStyle.titleRes)
             if (isAlbumCoverStyle(albumCoverStyle)) {
                 proText.setText(R.string.pro)
@@ -157,12 +173,16 @@ class AlbumCoverStylePreferenceDialog : DialogFragment(),
     companion object {
         val TAG: String = AlbumCoverStylePreferenceDialog::class.java.simpleName
 
-        fun newInstance(): AlbumCoverStylePreferenceDialog {
-            return AlbumCoverStylePreferenceDialog()
+        fun newInstance(key: String): AlbumCoverStylePreferenceDialog {
+            val bundle = Bundle()
+            bundle.putString(ARG_KEY, key)
+            val fragment = AlbumCoverStylePreferenceDialog()
+            fragment.arguments = bundle
+            return fragment
         }
     }
 }
 
 private fun isAlbumCoverStyle(style: AlbumCoverStyle): Boolean {
-    return (!App.isProVersion() && (style == Circle || style == Card || style == FullCard))
+    return (!App.isProVersion() && (style == CIRCLE || style == CARD || style == FULL_CARD))
 }

@@ -18,11 +18,13 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import code.name.monkey.appthemehelper.ThemeStore
 import code.name.monkey.appthemehelper.util.ATHUtil
+import code.name.monkey.appthemehelper.util.MaterialUtil
 import code.name.monkey.appthemehelper.util.TintHelper
 import code.name.monkey.appthemehelper.util.ToolbarContentTintHelper
 import code.name.monkey.retromusic.BuildConfig
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.base.AbsBaseActivity
+import code.name.monkey.retromusic.dialogs.UpiPaymentBottomSheetDialogFragment
 import code.name.monkey.retromusic.extensions.textColorPrimary
 import code.name.monkey.retromusic.extensions.textColorSecondary
 import com.anjlab.android.iab.v3.BillingProcessor
@@ -71,6 +73,14 @@ class SupportDevelopmentActivity : AbsBaseActivity(), BillingProcessor.IBillingH
         billingProcessor = BillingProcessor(this, BuildConfig.GOOGLE_PLAY_LICENSING_KEY, this)
         TintHelper.setTint(progress, ThemeStore.accentColor(this))
         donation.setTextColor(ThemeStore.accentColor(this))
+
+        MaterialUtil.setTint(upiClick)
+        upiClick.setOnClickListener {
+            UpiPaymentBottomSheetDialogFragment().show(
+                supportFragmentManager,
+                UpiPaymentBottomSheetDialogFragment.TAG
+            )
+        }
     }
 
     private fun setupToolbar() {
@@ -201,7 +211,7 @@ class SkuDetailsAdapter(
 
     override fun onBindViewHolder(viewHolder: ViewHolder, i: Int) {
         val skuDetails = skuDetailsList[i]
-        viewHolder.title.text = skuDetails.title.replace("Music Player - MP3 Player - Retro", "")
+        viewHolder.title.text = skuDetails.title.replace("(Retro Music Player)", "")
             .trim { it <= ' ' }
         viewHolder.text.text = skuDetails.description
         viewHolder.text.visibility = View.GONE
@@ -212,9 +222,9 @@ class SkuDetailsAdapter(
         val titleTextColor = if (purchased) ATHUtil.resolveColor(
             donationsDialog,
             android.R.attr.textColorHint
-        ) else donationsDialog.textColorPrimary()
+        ) else textColorPrimary(donationsDialog)
         val contentTextColor =
-            if (purchased) titleTextColor else donationsDialog.textColorSecondary()
+            if (purchased) titleTextColor else textColorSecondary(donationsDialog)
 
         viewHolder.title.setTextColor(titleTextColor)
         viewHolder.text.setTextColor(contentTextColor)

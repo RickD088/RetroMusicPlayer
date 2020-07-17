@@ -31,7 +31,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="RtlHardcoded,RtlSymmetry"
-             tools:text="@tools:sample/date/hhmmss" />
+            tools:text="00:22" />
 
         <androidx.appcompat.widget.AppCompatSeekBar
             android:id="@+id/progressSlider"
@@ -55,7 +55,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="RtlHardcoded,RtlSymmetry"
-             tools:text="@tools:sample/date/hhmmss" />
+            tools:text="00:22" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout
@@ -114,7 +114,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:ellipsize="end"
         android:gravity="center"
         android:maxLines="1"

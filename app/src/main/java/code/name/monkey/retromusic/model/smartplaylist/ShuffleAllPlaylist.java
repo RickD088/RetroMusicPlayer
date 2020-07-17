@@ -24,7 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 import code.name.monkey.retromusic.R;
+import code.name.monkey.retromusic.extensions.ArrayListExKt;
 import code.name.monkey.retromusic.loaders.SongLoader;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Song;
 
 public class ShuffleAllPlaylist extends AbsSmartPlaylist {
@@ -59,7 +61,7 @@ public class ShuffleAllPlaylist extends AbsSmartPlaylist {
 
     @NonNull
     @Override
-    public ArrayList<Song> getSongs(@NotNull Context context) {
-        return SongLoader.INSTANCE.getAllSongs(context);
+    public ArrayList<CommonData> getSongs(@NotNull Context context) {
+        return ArrayListExKt.toCommonData(SongLoader.INSTANCE.getAllSongs(context));
     }
 }

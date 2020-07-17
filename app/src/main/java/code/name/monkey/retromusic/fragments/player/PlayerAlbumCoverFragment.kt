@@ -11,19 +11,17 @@ import code.name.monkey.retromusic.adapter.album.AlbumCoverPagerAdapter.AlbumCov
 import code.name.monkey.retromusic.fragments.NowPlayingScreen.*
 import code.name.monkey.retromusic.fragments.base.AbsMusicServiceFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.transform.CarousalPagerTransformer
 import code.name.monkey.retromusic.transform.ParallaxPagerTransformer
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_player_album_cover.*
-
 
 class PlayerAlbumCoverFragment : AbsMusicServiceFragment(), ViewPager.OnPageChangeListener {
     private var callbacks: Callbacks? = null
     private var currentPosition: Int = 0
     private val colorReceiver = object : AlbumCoverFragment.ColorReceiver {
-        override fun onColorReady(color: MediaNotificationProcessor, request: Int) {
+        override fun onColorReady(color: Int, request: Int) {
             if (currentPosition == request) {
                 notifyColorChange(color)
             }
@@ -33,6 +31,7 @@ class PlayerAlbumCoverFragment : AbsMusicServiceFragment(), ViewPager.OnPageChan
     fun removeSlideEffect() {
         val transformer = ParallaxPagerTransformer(R.id.player_image)
         transformer.setSpeed(0.3f)
+        viewPager.setPageTransformer(true, transformer)
     }
 
     override fun onCreateView(
@@ -45,29 +44,20 @@ class PlayerAlbumCoverFragment : AbsMusicServiceFragment(), ViewPager.OnPageChan
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewPager.addOnPageChangeListener(this)
-        val nps = PreferenceUtil.nowPlayingScreen
+        val nowPlayingScreen = PreferenceUtil.getInstance(requireContext()).nowPlayingScreen
 
-        val metrics = resources.displayMetrics
-        val ratio = metrics.heightPixels.toFloat() / metrics.widthPixels.toFloat()
-
-        if (nps == Full || nps == Classic || nps == Fit || nps == Gradient) {
-            viewPager.offscreenPageLimit = 2
-        } else if (PreferenceUtil.isCarouselEffect) {
+        if (PreferenceUtil.getInstance(requireContext()).carouselEffect() &&
+            !((nowPlayingScreen == FULL) || (nowPlayingScreen == ADAPTIVE) || (nowPlayingScreen == FIT))
+        ) {
             viewPager.clipToPadding = false
-            val padding =
-                if (ratio >= 1.777f) {
-                    40
-                } else {
-                    100
-                }
-            viewPager.setPadding(padding, 0, padding, 0)
+            viewPager.setPadding(40, 40, 40, 0)
             viewPager.pageMargin = 0
             viewPager.setPageTransformer(false, CarousalPagerTransformer(requireContext()))
         } else {
             viewPager.offscreenPageLimit = 2
             viewPager.setPageTransformer(
                 true,
-                PreferenceUtil.albumCoverTransform
+                PreferenceUtil.getInstance(requireContext()).albumCoverTransform
             )
         }
     }
@@ -114,7 +104,7 @@ class PlayerAlbumCoverFragment : AbsMusicServiceFragment(), ViewPager.OnPageChan
     override fun onPageScrollStateChanged(state: Int) {
     }
 
-    private fun notifyColorChange(color: MediaNotificationProcessor) {
+    private fun notifyColorChange(color: Int) {
         callbacks?.onColorChanged(color)
     }
 
@@ -122,10 +112,13 @@ class PlayerAlbumCoverFragment : AbsMusicServiceFragment(), ViewPager.OnPageChan
         callbacks = listener
     }
 
+    fun removeEffect() {
+        viewPager.setPageTransformer(false, null)
+    }
 
     interface Callbacks {
 
-        fun onColorChanged(color: MediaNotificationProcessor)
+        fun onColorChanged(color: Int)
 
         fun onFavoriteToggled()
     }

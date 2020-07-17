@@ -20,60 +20,66 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.DialogFragment
-import code.name.monkey.retromusic.EXTRA_SONG
+import androidx.fragment.app.FragmentManager
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.saf.SAFGuideActivity
-import code.name.monkey.retromusic.extensions.extraNotNull
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.MusicUtil
+import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.SAFUtil
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 
 class DeleteSongsDialog : DialogFragment() {
     @JvmField
-    var currentSong: Song? = null
-
+    var currentSong: CommonData? = null
     @JvmField
-    var songsToRemove: List<Song>? = null
+    var songsToRemove: List<CommonData>? = null
 
     private var deleteSongsAsyncTask: DeleteSongsAsyncTask? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val songs = extraNotNull<List<Song>>(EXTRA_SONG).value
+        val songs: ArrayList<CommonData>? = requireArguments().getParcelableArrayList("songs")
         var title = 0
-        var message: CharSequence = ""
-        if (songs.size > 1) {
-            title = R.string.delete_songs_title
-            message = HtmlCompat.fromHtml(
-                String.format(getString(R.string.delete_x_songs), songs.size),
-                HtmlCompat.FROM_HTML_MODE_LEGACY
-            )
-        } else {
-            title = R.string.delete_song_title
-            message = HtmlCompat.fromHtml(
-                String.format(getString(R.string.delete_song_x), songs[0].title),
-                HtmlCompat.FROM_HTML_MODE_LEGACY
-            )
+        var content: CharSequence = ""
+        if (songs != null) {
+            if (songs.size > 1) {
+                title = R.string.delete_songs_title
+                content = HtmlCompat.fromHtml(
+                    getString(R.string.delete_x_songs, songs.size),
+                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                )
+            } else {
+                title = R.string.delete_song_title
+                content = HtmlCompat.fromHtml(
+                    getString(R.string.delete_song_x, songs[0].getSongTitle()),
+                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                )
+            }
         }
 
-        return MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-        )
-            .setTitle(title)
-            .setMessage(message)
-            .setCancelable(false)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.action_delete) { _, _ ->
-                if ((songs.size == 1) && MusicPlayerRemote.isPlaying(songs[0])) {
-                    MusicPlayerRemote.playNextSong()
+        return MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            title(title)
+            message(text = content)
+            negativeButton(android.R.string.cancel) {
+                dismissDialog()
+            }
+            cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+            noAutoDismiss()
+            positiveButton(R.string.action_delete) {
+                if (songs != null) {
+                    if ((songs.size == 1) && MusicPlayerRemote.isPlaying(songs[0])) {
+                        MusicPlayerRemote.playNextSong(activity)
+                    }
                 }
                 songsToRemove = songs
                 deleteSongsAsyncTask = DeleteSongsAsyncTask(this@DeleteSongsDialog)
                 deleteSongsAsyncTask?.execute(DeleteSongsAsyncTask.LoadingInfo(songs, null))
             }
-            .create()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -99,22 +105,36 @@ class DeleteSongsDialog : DialogFragment() {
         }
     }
 
-    fun deleteSongs(songs: List<Song>, safUris: List<Uri>?) {
+    fun deleteSongs(songs: List<CommonData>, safUris: List<Uri>?) {
         MusicUtil.deleteTracks(requireActivity(), songs, safUris) { this.dismiss() }
+    }
+
+    override fun show(manager: FragmentManager, tag: String?) {
+        try {
+            super.show(manager, tag)
+        } catch (ignore: IllegalStateException) {
+            ignore.printStackTrace()
+        }
+    }
+
+    private fun dismissDialog() {
+        if (activity != null && !requireActivity().isFinishing) {
+            dismissAllowingStateLoss()
+        }
     }
 
     companion object {
 
-        fun create(song: Song): DeleteSongsDialog {
-            val list = ArrayList<Song>()
+        fun create(song: CommonData): DeleteSongsDialog {
+            val list = ArrayList<CommonData>()
             list.add(song)
             return create(list)
         }
 
-        fun create(songs: List<Song>): DeleteSongsDialog {
+        fun create(songs: List<CommonData>): DeleteSongsDialog {
             val dialog = DeleteSongsDialog()
             val args = Bundle()
-            args.putParcelableArrayList(EXTRA_SONG, ArrayList(songs))
+            args.putParcelableArrayList("songs", ArrayList(songs))
             dialog.arguments = args
             return dialog
         }

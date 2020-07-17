@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
 import androidx.preference.PreferenceManager
 import code.name.monkey.appthemehelper.util.ToolbarContentTintHelper
-import code.name.monkey.retromusic.NEW_BLUR_AMOUNT
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
@@ -17,8 +16,9 @@ import code.name.monkey.retromusic.glide.BlurTransformation
 import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.glide.SongGlideRequest
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
+import code.name.monkey.retromusic.util.PreferenceUtil
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_blur.*
 
@@ -65,16 +65,16 @@ class BlurPlayerFragment : AbsPlayerFragment(), SharedPreferences.OnSharedPrefer
         toggleFavorite(MusicPlayerRemote.currentSong)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        playbackControlsFragment.setColor(color)
-        lastColor = color.backgroundColor
+    override fun onColorChanged(color: Int) {
+        playbackControlsFragment.setDark(color)
+        lastColor = color
         callbacks?.onPaletteColorChanged()
         ToolbarContentTintHelper.colorizeToolbar(playerToolbar, Color.WHITE, activity)
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }
@@ -98,21 +98,17 @@ class BlurPlayerFragment : AbsPlayerFragment(), SharedPreferences.OnSharedPrefer
 
     private fun updateBlur() {
         val blurAmount = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            .getInt(NEW_BLUR_AMOUNT, 25)
+            .getInt(PreferenceUtil.NEW_BLUR_AMOUNT, 25)
         colorBackground.clearColorFilter()
         SongGlideRequest.Builder.from(Glide.with(requireActivity()), MusicPlayerRemote.currentSong)
             .checkIgnoreMediaStore(requireContext())
             .generatePalette(requireContext()).build()
             .dontAnimate()
-            .transform(
-                BlurTransformation.Builder(requireContext())
-                    .blurRadius(blurAmount.toFloat())
-                    .build()
-            )
+            .transform(BlurTransformation.Builder(requireContext()).blurRadius(blurAmount.toFloat()).build())
             .into(object : RetroMusicColoredTarget(colorBackground) {
-                override fun onColorReady(colors: MediaNotificationProcessor) {
-                    if (colors.backgroundColor == defaultFooterColor) {
-                        colorBackground.setColorFilter(colors.backgroundColor)
+                override fun onColorReady(color: Int) {
+                    if (color == defaultFooterColor) {
+                        colorBackground.setColorFilter(color)
                     }
                 }
             })
@@ -141,7 +137,7 @@ class BlurPlayerFragment : AbsPlayerFragment(), SharedPreferences.OnSharedPrefer
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if (key == NEW_BLUR_AMOUNT) {
+        if (key == PreferenceUtil.NEW_BLUR_AMOUNT) {
             updateBlur()
         }
     }

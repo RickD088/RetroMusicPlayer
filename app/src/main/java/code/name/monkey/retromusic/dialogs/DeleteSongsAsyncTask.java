@@ -29,12 +29,14 @@ import androidx.fragment.app.FragmentActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.activities.saf.SAFGuideActivity;
 import code.name.monkey.retromusic.misc.DialogAsyncTask;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Song;
 import code.name.monkey.retromusic.util.SAFUtil;
 
@@ -55,8 +57,7 @@ public class DeleteSongsAsyncTask extends DialogAsyncTask<DeleteSongsAsyncTask.L
     @NonNull
     @Override
     protected Dialog createDialog(@NonNull Context context) {
-        return new MaterialAlertDialogBuilder(context,
-                R.style.ThemeOverlay_MaterialComponents_Dialog_Alert)
+        return new MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.deleting_songs)
                 .setView(R.layout.loading)
                 .setCancelable(false)
@@ -76,7 +77,7 @@ public class DeleteSongsAsyncTask extends DialogAsyncTask<DeleteSongsAsyncTask.L
             }
 
             if (!info.isIntent) {
-                if (!SAFUtil.isSAFRequiredForSongs(info.songs)) {
+                if (!SAFUtil.isSAFRequiredForSongs(info.localSongs)) {
                     dialog.deleteSongs(info.songs, null);
                 } else {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -127,12 +128,19 @@ public class DeleteSongsAsyncTask extends DialogAsyncTask<DeleteSongsAsyncTask.L
 
         public List<Uri> safUris;
 
-        public List<Song> songs;
+        public List<CommonData> songs;
 
-        public LoadingInfo(List<Song> songs, List<Uri> safUris) {
+        public List<Song> localSongs = new ArrayList<>();
+
+        public LoadingInfo(List<CommonData> songs, List<Uri> safUris) {
             this.isIntent = false;
             this.songs = songs;
             this.safUris = safUris;
+            for (CommonData data : songs) {
+                if (data.localSong()) {
+                    localSongs.add(data.getLocalSong());
+                }
+            }
         }
 
         public LoadingInfo(int requestCode, int resultCode, Intent intent) {

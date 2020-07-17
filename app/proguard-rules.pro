@@ -24,6 +24,23 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+-optimizationpasses 5                       # 指定代码的压缩级别
+-dontusemixedcaseclassnames                 # 纯小写混合类名
+-dontskipnonpubliclibraryclasses            # 不忽略非公共库的类
+-dontskipnonpubliclibraryclassmembers       # 不忽略非公共库的类
+-dontpreverify                              # 不做预校验
+-verbose                                    # 混淆时记录日志
+-allowaccessmodification                    # 优化时允许访问并修改有修饰符的类和类的成员
+-mergeinterfacesaggressively                # 混淆时应用侵入式重载
+
+-optimizations !code/simplification/arithmetic,!field/*,!class/merging/*  # 混淆时所采用的算法
+
+-keepattributes *Annotation*                # 保护代码中的Annotation不被混淆
+-keepattributes Signature                   # 避免混淆泛型
+-renamesourcefileattribute ProGuard         # 重命名被混淆文件名
+-keepattributes SourceFile,LineNumberTable  # 抛出异常时保留代码行号
+-ignorewarnings
+
 -dontwarn java.lang.invoke.*
 -dontwarn **$$Lambda$*
 

@@ -23,6 +23,9 @@ import android.webkit.MimeTypeMap;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
+import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -37,14 +40,104 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import code.name.monkey.retromusic.abram.Constants;
 import code.name.monkey.retromusic.loaders.SongLoader;
 import code.name.monkey.retromusic.loaders.SortedCursor;
 import code.name.monkey.retromusic.model.Song;
+import code.name.monkey.retromusic.providers.HistoryStore;
 
 
 public final class FileUtil {
 
     private FileUtil() {
+    }
+
+    public static void init() {
+        if (Constants.INSTANCE.getPLAY_MUSIC_CACHE() == null) {
+            File dir = new File(Environment.getExternalStorageDirectory(), "Songs/cache");
+            if (!dir.exists()) dir.mkdirs();
+            Constants.INSTANCE.setPLAY_MUSIC_CACHE(new SimpleCache(dir, new NoOpCacheEvictor()));
+        }
+    }
+
+    /**
+     * 返回 -2    表示下载出错
+     * 返回 -1    表示无对应下载项
+     * 返回 0     表示有下载项但无文件
+     * 返回 >0    表示下载进度
+     * @param context
+     * @param songId
+     * @return
+     */
+    public static int getMusicDownloadProgress(Context context, int songId, String url) {
+        int progress = -1;
+        Cursor cursor = HistoryStore.getInstance(context).queryDownloadBySongId(songId);
+        if (cursor != null && cursor.moveToFirst()) {
+            progress = getMusicCacheProgress(url);
+            if (progress > Constants.DOWNLOAD_ASSUMED_COMPLETION_PERCENTAGE) {
+                progress = 100;
+            } else {
+                String path = cursor.getString(cursor.getColumnIndex(HistoryStore.DownloadStoreColumns.PATH));
+                progress = cursor.getInt(cursor.getColumnIndex(HistoryStore.DownloadStoreColumns.DOWNLOAD_PROGRESS));
+                File file = new File(path);
+                if (progress > Constants.DOWNLOAD_ASSUMED_COMPLETION_PERCENTAGE && !(file.exists() && file.canRead())) {
+                    progress = 0;
+                }
+            }
+            cursor.close();
+        }
+        return progress;
+    }
+
+    public static boolean isMusicInDownloadList(Context context, int songId) {
+        Cursor cursor = HistoryStore.getInstance(context).queryDownloadBySongId(songId);
+        return (cursor != null && cursor.moveToFirst());
+    }
+
+    /**
+     *
+     * 返回 -1    表示无对应缓存项
+     * 返回 >=0    表示缓存进度
+     * @param url
+     * @return
+     */
+    public static int getMusicCacheProgress(String url) {
+        int progress = -1;
+        SimpleCache cache = Constants.INSTANCE.getPLAY_MUSIC_CACHE();
+        if (cache != null) {
+            for (String cacheUrl: cache.getKeys()) {
+                // 找到匹配的缓存
+                if (cacheUrl.equals(url)) {
+                    // 获取需要缓存的长度
+                    long len = cache.getContentMetadata(url).get("exo_len", 0);
+                    // 因 exo 的缓存有时候会不全，这里增加一个容错
+                    if (len > 0) {
+                        progress = (int)(cache.getCachedLength(url, 0, len) * 100 / len);
+                    }
+                }
+            }
+        }
+        return progress;
+    }
+
+    public static boolean isMusicCached(String url) {
+        boolean cached = false;
+        SimpleCache cache = Constants.INSTANCE.getPLAY_MUSIC_CACHE();
+        if (cache != null) {
+            for (String cacheUrl: cache.getKeys()) {
+                // 找到匹配的缓存
+                if (cacheUrl.equals(url)) {
+                    // 获取需要缓存的长度
+                    long len = cache.getContentMetadata(url).get("exo_len", 0);
+                    // 因 exo 的缓存有时候会不全，这里增加一个容错
+                    if (len > 0 && cache.getCachedLength(url, 0, len)
+                            > len * Constants.DOWNLOAD_ASSUMED_COMPLETION_PERCENTAGE / 100) {
+                        cached = true;
+                    }
+                }
+            }
+        }
+        return cached;
     }
 
     public static byte[] readBytes(InputStream stream) throws IOException {

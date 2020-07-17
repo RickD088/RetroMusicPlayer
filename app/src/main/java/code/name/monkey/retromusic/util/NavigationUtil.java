@@ -29,6 +29,10 @@ import org.jetbrains.annotations.NotNull;
 
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.activities.AboutActivity;
+import code.name.monkey.retromusic.activities.AlbumDetailsActivity;
+import code.name.monkey.retromusic.activities.ArtistDetailActivity;
+import code.name.monkey.retromusic.activities.CheckInActivity;
+import code.name.monkey.retromusic.activities.CollectPrizeActivity;
 import code.name.monkey.retromusic.activities.DriveModeActivity;
 import code.name.monkey.retromusic.activities.GenreDetailsActivity;
 import code.name.monkey.retromusic.activities.LicenseActivity;
@@ -38,13 +42,13 @@ import code.name.monkey.retromusic.activities.PlaylistDetailActivity;
 import code.name.monkey.retromusic.activities.PurchaseActivity;
 import code.name.monkey.retromusic.activities.SearchActivity;
 import code.name.monkey.retromusic.activities.SettingsActivity;
+import code.name.monkey.retromusic.activities.SpinActivity;
 import code.name.monkey.retromusic.activities.SupportDevelopmentActivity;
 import code.name.monkey.retromusic.activities.UserInfoActivity;
 import code.name.monkey.retromusic.activities.WhatsNewActivity;
-import code.name.monkey.retromusic.activities.albums.AlbumDetailsActivity;
-import code.name.monkey.retromusic.activities.artists.ArtistDetailActivity;
 import code.name.monkey.retromusic.activities.bugreport.BugReportActivity;
 import code.name.monkey.retromusic.helper.MusicPlayerRemote;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Genre;
 import code.name.monkey.retromusic.model.Playlist;
 
@@ -62,32 +66,52 @@ public class NavigationUtil {
         ActivityCompat.startActivity(activity, new Intent(activity, AboutActivity.class), null);
     }
 
-    public static void goToAlbum(@NonNull Activity activity, int albumId) {
+    public static void goToAlbum(@NonNull Activity activity, int albumId, CommonData data) {
         Intent intent = new Intent(activity, AlbumDetailsActivity.class);
         intent.putExtra(AlbumDetailsActivity.EXTRA_ALBUM_ID, albumId);
+        intent.putExtra(AlbumDetailsActivity.EXTRA_COMMON_DATA, data);
         ActivityCompat.startActivity(activity, intent, null);
     }
 
     public static void goToAlbumOptions(@NonNull Activity activity,
-                                        int albumId,
+                                        int albumId, CommonData data,
+                                        @NonNull ActivityOptions options) {
+        goToAlbumOptions(activity, albumId, true, "", data, options);
+    }
+
+    public static void goToAlbumOptions(@NonNull Activity activity,
+                                        int albumId, boolean local, String name, CommonData data,
                                         @NonNull ActivityOptions options) {
         Intent intent = new Intent(activity, AlbumDetailsActivity.class);
         intent.putExtra(AlbumDetailsActivity.EXTRA_ALBUM_ID, albumId);
+        intent.putExtra(AlbumDetailsActivity.EXTRA_TYPE_LOCAL, local);
+        intent.putExtra(AlbumDetailsActivity.EXTRA_ALBUM_NAME, name);
+        intent.putExtra(AlbumDetailsActivity.EXTRA_COMMON_DATA, data);
         ActivityCompat.startActivity(activity, intent, options.toBundle());
     }
 
-    public static void goToArtist(@NonNull Activity activity, int i) {
+    public static void goToArtist(@NonNull Activity activity, int i, CommonData data) {
         Intent intent = new Intent(activity, ArtistDetailActivity.class);
         intent.putExtra(ArtistDetailActivity.EXTRA_ARTIST_ID, i);
+        intent.putExtra(ArtistDetailActivity.EXTRA_COMMON_DATA, data);
         ActivityCompat.startActivity(activity, intent, null);
     }
 
     public static void goToArtistOptions(@NotNull Activity activity,
-                                         int artistId,
+                                         int artistId, CommonData data,
+                                         @NonNull ActivityOptions options) {
+
+        goToArtistOptions(activity, artistId, true, data, options);
+    }
+
+    public static void goToArtistOptions(@NotNull Activity activity,
+                                         int artistId, boolean local, CommonData data,
                                          @NonNull ActivityOptions options) {
 
         Intent intent = new Intent(activity, ArtistDetailActivity.class);
         intent.putExtra(ArtistDetailActivity.EXTRA_ARTIST_ID, artistId);
+        intent.putExtra(ArtistDetailActivity.EXTRA_TYPE_LOCAL, local);
+        intent.putExtra(ArtistDetailActivity.EXTRA_COMMON_DATA, data);
         ActivityCompat.startActivity(activity, intent, options.toBundle());
     }
 
@@ -131,11 +155,6 @@ public class NavigationUtil {
                 activityOptions.toBundle());
     }
 
-    public static void goToSearch(@NonNull Activity activity) {
-        ActivityCompat.startActivity(activity, new Intent(activity, SearchActivity.class),
-                null);
-    }
-
     public static void goToSearch(@NonNull Activity activity, boolean isMicOpen,
                                   @NonNull ActivityOptions activityOptions) {
         ActivityCompat.startActivity(activity, new Intent(activity, SearchActivity.class)
@@ -163,6 +182,18 @@ public class NavigationUtil {
 
     public static void gotoWhatNews(@NonNull Activity activity) {
         ActivityCompat.startActivity(activity, new Intent(activity, WhatsNewActivity.class), null);
+    }
+
+    public static void gotoCheckIn(@NonNull Activity activity) {
+        ActivityCompat.startActivity(activity, new Intent(activity, CheckInActivity.class), null);
+    }
+
+    public static void gotoCollectPrize(@NonNull Activity activity, String card) {
+        ActivityCompat.startActivity(activity, new Intent(activity, CollectPrizeActivity.class).putExtra(CollectPrizeActivity.EXTRA_CARD, card), null);
+    }
+
+    public static void gotoSpin(@NonNull Activity activity, String card) {
+        ActivityCompat.startActivity(activity, new Intent(activity, SpinActivity.class).putExtra(SpinActivity.EXTRA_CARD, card), null);
     }
 
     public static void openEqualizer(@NonNull final Activity activity) {

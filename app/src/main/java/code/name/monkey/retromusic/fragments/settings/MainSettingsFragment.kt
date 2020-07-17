@@ -14,20 +14,26 @@
 
 package code.name.monkey.retromusic.fragments.settings
 
+import android.app.ActivityOptions
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import code.name.monkey.appthemehelper.ThemeStore
 import code.name.monkey.retromusic.App
+import code.name.monkey.retromusic.BuildConfig
 import code.name.monkey.retromusic.R
+import code.name.monkey.retromusic.abram.Constants
+import code.name.monkey.retromusic.abram.RemoteConfig
 import code.name.monkey.retromusic.activities.SettingsActivity
 import code.name.monkey.retromusic.extensions.hide
 import code.name.monkey.retromusic.extensions.show
 import code.name.monkey.retromusic.util.NavigationUtil
+import kotlinx.android.synthetic.main.fragment_banner_home.*
 import kotlinx.android.synthetic.main.fragment_main_settings.*
 
 class MainSettingsFragment : Fragment(), View.OnClickListener {
@@ -56,6 +62,14 @@ class MainSettingsFragment : Fragment(), View.OnClickListener {
             )
             R.id.otherSettings -> inflateFragment(OtherSettingsFragment(), R.string.others)
             R.id.aboutSettings -> NavigationUtil.goToAbout(requireActivity())
+            R.id.loginSettings -> {
+                val options = ActivityOptions.makeSceneTransitionAnimation(
+                    requireActivity(),
+                    userImage,
+                    getString(R.string.transition_user_image)
+                )
+                NavigationUtil.goToUserInfo(requireActivity(), options)
+            }
         }
     }
 
@@ -77,6 +91,7 @@ class MainSettingsFragment : Fragment(), View.OnClickListener {
         notificationSettings.setOnClickListener(this)
         otherSettings.setOnClickListener(this)
         aboutSettings.setOnClickListener(this)
+        loginSettings.setOnClickListener(this)
 
         buyProContainer.apply {
             if (!App.isProVersion()) show() else hide()

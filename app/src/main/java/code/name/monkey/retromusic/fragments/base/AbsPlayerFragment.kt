@@ -14,6 +14,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import code.name.monkey.appthemehelper.util.ATHUtil
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.tageditor.AbsTagEditorActivity
 import code.name.monkey.retromusic.activities.tageditor.SongTagEditorActivity
@@ -21,7 +22,9 @@ import code.name.monkey.retromusic.dialogs.*
 import code.name.monkey.retromusic.extensions.hide
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.helper.menu.SongMenuHelper
 import code.name.monkey.retromusic.interfaces.PaletteColorHolder
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.model.lyrics.Lyrics
 import code.name.monkey.retromusic.util.*
@@ -29,9 +32,9 @@ import kotlinx.android.synthetic.main.shadow_statusbar_toolbar.*
 import java.io.FileNotFoundException
 
 abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
-    Toolbar.OnMenuItemClickListener,
-    PaletteColorHolder,
-    PlayerAlbumCoverFragment.Callbacks {
+        Toolbar.OnMenuItemClickListener,
+        PaletteColorHolder,
+        PlayerAlbumCoverFragment.Callbacks {
 
     var callbacks: Callbacks? = null
         private set
@@ -40,7 +43,7 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
     private var playerAlbumCoverFragment: PlayerAlbumCoverFragment? = null
 
     override fun onAttach(
-        context: Context
+            context: Context
     ) {
         super.onAttach(context)
         try {
@@ -56,7 +59,7 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
     }
 
     override fun onMenuItemClick(
-        item: MenuItem
+            item: MenuItem
     ): Boolean {
         val song = MusicPlayerRemote.currentSong
         when (item.itemId) {
@@ -85,13 +88,13 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
                 return true
             }
             R.id.action_save_playing_queue -> {
-                CreatePlaylistDialog.create(ArrayList(MusicPlayerRemote.playingQueue))
-                    .show(childFragmentManager, "ADD_TO_PLAYLIST")
+                CreatePlaylistDialog.create(MusicPlayerRemote.playingQueue)
+                        .show(childFragmentManager, "ADD_TO_PLAYLIST")
                 return true
             }
             R.id.action_tag_editor -> {
                 val intent = Intent(activity, SongTagEditorActivity::class.java)
-                intent.putExtra(AbsTagEditorActivity.EXTRA_ID, song.id)
+                intent.putExtra(AbsTagEditorActivity.EXTRA_ID, song.getSongId())
                 startActivity(intent)
                 return true
             }
@@ -100,11 +103,15 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
                 return true
             }
             R.id.action_go_to_album -> {
-                NavigationUtil.goToAlbum(requireActivity(), song.albumId)
+                if (song.localSong()) {
+                    NavigationUtil.goToAlbum(requireActivity(), song.getLocalSong().albumId, song)
+                }
                 return true
             }
             R.id.action_go_to_artist -> {
-                NavigationUtil.goToArtist(requireActivity(), song.artistId)
+                if (song.localSong()) {
+                    NavigationUtil.goToArtist(requireActivity(), song.getLocalSong().artistId, song)
+                }
                 return true
             }
             R.id.now_playing -> {
@@ -124,34 +131,41 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
                 return true
             }
             R.id.action_set_as_ringtone -> {
-                if (RingtoneManager.requiresDialog(requireActivity())) {
-                    RingtoneManager.getDialog(requireActivity())
+                if (song.localSong()) {
+                    if (RingtoneManager.requiresDialog(requireActivity())) {
+                        RingtoneManager.getDialog(requireActivity())
+                    }
+                    val ringtoneManager = RingtoneManager(requireActivity())
+                    ringtoneManager.setRingtone(song.getLocalSong())
                 }
-                val ringtoneManager = RingtoneManager(requireActivity())
-                ringtoneManager.setRingtone(song)
                 return true
             }
             R.id.action_go_to_genre -> {
-                val retriever = MediaMetadataRetriever()
-                val trackUri =
-                    ContentUris.withAppendedId(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        song.id.toLong()
-                    )
-                retriever.setDataSource(activity, trackUri)
-                var genre: String? =
-                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
-                if (genre == null) {
-                    genre = "Not Specified"
+                if (song.localSong()) {
+                    val retriever = MediaMetadataRetriever()
+                    val trackUri =
+                            ContentUris.withAppendedId(
+                                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                                    song.getLocalSong().id.toLong()
+                            )
+                    retriever.setDataSource(activity, trackUri)
+                    var genre: String? =
+                            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
+                    if (genre == null) {
+                        genre = "Not Specified"
+                    }
+                    Toast.makeText(context, genre, Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, genre, Toast.LENGTH_SHORT).show()
                 return true
+            }
+            R.id.action_download -> {
+                SongMenuHelper.handleMenuClick(requireActivity(), song, R.id.action_save_song)
             }
         }
         return false
     }
 
-    protected open fun toggleFavorite(song: Song) {
+    protected open fun toggleFavorite(song: CommonData) {
         MusicUtil.toggleFavorite(requireActivity(), song)
     }
 
@@ -187,67 +201,93 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
 
     @SuppressLint("StaticFieldLeak")
     fun updateIsFavorite() {
-        if (updateIsFavoriteTask != null) {
-            updateIsFavoriteTask!!.cancel(false)
+        /*if (MusicPlayerRemote.currentSong.localSong()) {
+            if (updateIsFavoriteTask != null) {
+                updateIsFavoriteTask!!.cancel(false)
+            }
+            updateIsFavoriteTask = object : AsyncTask<Song, Void, Boolean>() {
+                override fun doInBackground(vararg params: Song): Boolean {
+                    return MusicUtil.isFavorite(requireActivity(), params[0].convertToCommonData())
+                }
+
+                override fun onPostExecute(isFavorite: Boolean) {
+                    val res = if (isFavorite)
+                        R.drawable.ic_favorite_white_24dp
+                    else
+                        R.drawable.ic_favorite_border_white_24dp
+
+                    val drawable =
+                        RetroUtil.getTintedVectorDrawable(requireContext(), res, toolbarIconColor())
+                    if (playerToolbar() != null && playerToolbar()!!.menu.findItem(R.id.action_toggle_favorite) != null)
+                        playerToolbar()!!.menu.findItem(R.id.action_toggle_favorite)
+                            .setIcon(drawable)
+                            .title =
+                            if (isFavorite) getString(R.string.action_remove_from_favorites) else getString(
+                                R.string.action_add_to_favorites
+                            )
+                }
+            }.execute(MusicPlayerRemote.currentSong.getLocalSong())
+        }*/
+        updateMenu()
+    }
+
+    private fun updateMenu() {
+        if (MusicPlayerRemote.currentSong.cloudSong()) {
+            playerToolbar()?.menu?.findItem(R.id.action_go_to_album)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_go_to_artist)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_share)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_set_as_ringtone)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_details)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_delete_from_device)?.isVisible = false
+            playerToolbar()?.menu?.findItem(R.id.action_download)?.isVisible = true
+        } else {
+            playerToolbar()?.menu?.findItem(R.id.action_go_to_album)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_go_to_artist)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_share)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_set_as_ringtone)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_details)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_delete_from_device)?.isVisible = true
+            playerToolbar()?.menu?.findItem(R.id.action_download)?.isVisible = false
         }
-        updateIsFavoriteTask = object : AsyncTask<Song, Void, Boolean>() {
-            override fun doInBackground(vararg params: Song): Boolean {
-                return MusicUtil.isFavorite(requireActivity(), params[0])
-            }
-
-            override fun onPostExecute(isFavorite: Boolean) {
-                val res = if (isFavorite)
-                    R.drawable.ic_favorite_white_24dp
-                else
-                    R.drawable.ic_favorite_border_white_24dp
-
-                val drawable =
-                    RetroUtil.getTintedVectorDrawable(requireContext(), res, toolbarIconColor())
-                if (playerToolbar() != null && playerToolbar()!!.menu.findItem(R.id.action_toggle_favorite) != null)
-                    playerToolbar()!!.menu.findItem(R.id.action_toggle_favorite).setIcon(drawable)
-                        .title =
-                        if (isFavorite) getString(R.string.action_remove_from_favorites) else getString(
-                            R.string.action_add_to_favorites
-                        )
-            }
-        }.execute(MusicPlayerRemote.currentSong)
     }
 
     @SuppressLint("StaticFieldLeak")
     private fun updateLyrics() {
-        if (updateLyricsAsyncTask != null) updateLyricsAsyncTask!!.cancel(false)
+        if (MusicPlayerRemote.currentSong.localSong()) {
+            if (updateLyricsAsyncTask != null) updateLyricsAsyncTask!!.cancel(false)
 
-        updateLyricsAsyncTask = object : AsyncTask<Song, Void, Lyrics>() {
-            override fun onPreExecute() {
-                super.onPreExecute()
-                setLyrics(null)
-            }
-
-            override fun doInBackground(vararg params: Song): Lyrics? {
-                try {
-                    var data: String? =
-                        LyricUtil.getStringFromFile(params[0].title, params[0].artistName)
-                    return if (TextUtils.isEmpty(data)) {
-                        data = MusicUtil.getLyrics(params[0])
-                        return if (TextUtils.isEmpty(data)) {
-                            null
-                        } else {
-                            Lyrics.parse(params[0], data)
-                        }
-                    } else Lyrics.parse(params[0], data!!)
-                } catch (err: FileNotFoundException) {
-                    return null
+            updateLyricsAsyncTask = object : AsyncTask<Song, Void, Lyrics>() {
+                override fun onPreExecute() {
+                    super.onPreExecute()
+                    setLyrics(null)
                 }
-            }
 
-            override fun onPostExecute(l: Lyrics?) {
-                setLyrics(l)
-            }
+                override fun doInBackground(vararg params: Song): Lyrics? {
+                    try {
+                        var data: String? =
+                                LyricUtil.getStringFromFile(params[0].title, params[0].artistName)
+                        return if (TextUtils.isEmpty(data)) {
+                            data = MusicUtil.getLyrics(params[0].convertToCommonData())
+                            return if (TextUtils.isEmpty(data)) {
+                                null
+                            } else {
+                                Lyrics.parse(params[0], data)
+                            }
+                        } else Lyrics.parse(params[0], data!!)
+                    } catch (err: FileNotFoundException) {
+                        return null
+                    }
+                }
 
-            override fun onCancelled(s: Lyrics?) {
-                onPostExecute(null)
-            }
-        }.execute(MusicPlayerRemote.currentSong)
+                override fun onPostExecute(l: Lyrics?) {
+                    setLyrics(l)
+                }
+
+                override fun onCancelled(s: Lyrics?) {
+                    onPostExecute(null)
+                }
+            }.execute(MusicPlayerRemote.currentSong.getLocalSong())
+        }
     }
 
     open fun setLyrics(l: Lyrics?) {
@@ -255,13 +295,14 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (PreferenceUtil.isFullScreenMode &&
-            view.findViewById<View>(R.id.status_bar) != null
+        view.setBackgroundColor(ATHUtil.resolveColor(requireContext(), R.attr.colorSecondary))
+        if (PreferenceUtil.getInstance(requireContext()).fullScreenMode &&
+                view.findViewById<View>(R.id.status_bar) != null
         ) {
             view.findViewById<View>(R.id.status_bar).visibility = View.GONE
         }
         playerAlbumCoverFragment =
-            childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment?
+                childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment?
         playerAlbumCoverFragment?.setCallbacks(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -282,8 +323,8 @@ abstract class AbsPlayerFragment : AbsMusicServiceFragment(),
         val duration = MusicPlayerRemote.getQueueDurationMillis(MusicPlayerRemote.position)
 
         return MusicUtil.buildInfoString(
-            resources.getString(R.string.up_next),
-            MusicUtil.getReadableDurationString(duration)
+                resources.getString(R.string.up_next),
+                MusicUtil.getReadableDurationString(duration)
         )
     }
 }

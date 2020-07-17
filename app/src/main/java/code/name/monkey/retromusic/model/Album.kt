@@ -14,11 +14,17 @@
 
 package code.name.monkey.retromusic.model
 
+import code.name.monkey.retromusic.interfaces.CommonDataConverter
+import kotlinx.android.parcel.Parcelize
 import java.util.*
+import kotlin.collections.ArrayList
 
-class Album {
+@Parcelize
+class Album(val songs: ArrayList<Song> = ArrayList()) : CommonDataConverter {
 
-    val songs: ArrayList<Song>?
+    override fun convertToCommonData(): CommonData {
+        return CommonData(CommonData.TYPE_LOCAL_ALBUM, this)
+    }
 
     val id: Int
         get() = safeGetFirstSong().albumId
@@ -41,13 +47,6 @@ class Album {
     val songCount: Int
         get() = songs!!.size
 
-    constructor(songs: ArrayList<Song>) {
-        this.songs = songs
-    }
-
-    constructor() {
-        this.songs = ArrayList()
-    }
 
     fun safeGetFirstSong(): Song {
         return if (songs!!.isEmpty()) Song.emptySong else songs[0]

@@ -19,6 +19,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.fragment.app.DialogFragment
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
@@ -72,25 +73,16 @@ abstract class AbsSettingsFragment : ATEPreferenceFragmentCompat() {
         invalidateSettings()
     }
 
-    override fun onDisplayPreferenceDialog(preference: Preference?) {
-        when (preference) {
-            is LibraryPreference -> {
-                val fragment = LibraryPreferenceDialog.newInstance()
-                fragment.show(childFragmentManager, preference.key)
+    override fun onCreatePreferenceDialog(preference: Preference): DialogFragment? {
+        return when (preference) {
+            is LibraryPreference -> LibraryPreferenceDialog.newInstance(preference.key)
+            is NowPlayingScreenPreference -> NowPlayingScreenPreferenceDialog.newInstance(preference.key)
+            is AlbumCoverStylePreference -> AlbumCoverStylePreferenceDialog.newInstance(preference.key)
+            is MaterialListPreference -> {
+                MaterialListPreferenceDialog.newInstance(preference)
             }
-            is NowPlayingScreenPreference -> {
-                val fragment = NowPlayingScreenPreferenceDialog.newInstance()
-                fragment.show(childFragmentManager, preference.key)
-            }
-            is AlbumCoverStylePreference -> {
-                val fragment = AlbumCoverStylePreferenceDialog.newInstance()
-                fragment.show(childFragmentManager, preference.key)
-            }
-            is BlacklistPreference -> {
-                val fragment = BlacklistPreferenceDialog.newInstance()
-                fragment.show(childFragmentManager, preference.key)
-            }
-            else -> super.onDisplayPreferenceDialog(preference)
+            is BlacklistPreference -> BlacklistPreferenceDialog.newInstance()
+            else -> super.onCreatePreferenceDialog(preference)
         }
     }
 }

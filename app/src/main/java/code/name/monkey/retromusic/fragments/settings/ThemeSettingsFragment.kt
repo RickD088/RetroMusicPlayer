@@ -18,17 +18,22 @@ import android.os.Build
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.TwoStatePreference
+import code.name.monkey.appthemehelper.ACCENT_COLORS
+import code.name.monkey.appthemehelper.ACCENT_COLORS_SUB
 import code.name.monkey.appthemehelper.ThemeStore
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEColorPreference
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATESwitchPreference
 import code.name.monkey.appthemehelper.util.ColorUtil
 import code.name.monkey.appthemehelper.util.VersionUtils
 import code.name.monkey.retromusic.App
-import code.name.monkey.retromusic.DESATURATED_COLOR
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.appshortcuts.DynamicShortcutManager
 import code.name.monkey.retromusic.util.PreferenceUtil
-import com.afollestad.materialdialogs.color.ColorChooserDialog
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.color.colorChooser
+
 
 /**
  * @author Hemanth S (h4h13).
@@ -45,7 +50,7 @@ class ThemeSettingsFragment : AbsSettingsFragment() {
                 ThemeStore.markChanged(requireContext())
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-                    requireActivity().setTheme(PreferenceUtil.themeResFromPrefValue(theme))
+                    requireActivity().setTheme(PreferenceUtil.getThemeResFromPrefValue(theme))
                     DynamicShortcutManager(requireContext()).updateDynamicShortcuts()
                 }
                 requireActivity().recreate()
@@ -58,12 +63,21 @@ class ThemeSettingsFragment : AbsSettingsFragment() {
         accentColorPref.setColor(accentColor, ColorUtil.darkenColor(accentColor))
 
         accentColorPref.setOnPreferenceClickListener {
-            ColorChooserDialog.Builder(requireContext(), R.string.accent_color)
-                .accentMode(true)
-                .allowUserColorInput(true)
-                .allowUserColorInputAlpha(false)
-                .preselect(accentColor)
-                .show(requireActivity())
+            MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+                title(R.string.accent_color)
+                positiveButton(R.string.set)
+                colorChooser(
+                    colors = ACCENT_COLORS,
+                    allowCustomArgb = true,
+                    subColors = ACCENT_COLORS_SUB
+                ) { _, color ->
+                    ThemeStore.editTheme(requireContext()).accentColor(color).commit()
+                    if (VersionUtils.hasNougatMR())
+                        DynamicShortcutManager(requireContext()).updateDynamicShortcuts()
+                    requireActivity().recreate()
+                }
+            }
             return@setOnPreferenceClickListener true
         }
         val blackTheme: ATESwitchPreference? = findPreference("black_theme")
@@ -74,21 +88,20 @@ class ThemeSettingsFragment : AbsSettingsFragment() {
             }
             ThemeStore.markChanged(requireContext())
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-                requireActivity().setTheme(PreferenceUtil.themeResFromPrefValue("black"))
+                requireActivity().setTheme(PreferenceUtil.getThemeResFromPrefValue("black"))
                 DynamicShortcutManager(requireContext()).updateDynamicShortcuts()
             }
             requireActivity().recreate()
             true
         }
 
-        val desaturatedColor: ATESwitchPreference? = findPreference(DESATURATED_COLOR)
+        val desaturatedColor: ATESwitchPreference? =
+            findPreference(PreferenceUtil.DESATURATED_COLOR)
         desaturatedColor?.setOnPreferenceChangeListener { _, value ->
             val desaturated = value as Boolean
-            ThemeStore.prefs(requireContext())
-                .edit()
-                .putBoolean("desaturated_color", desaturated)
+            ThemeStore.prefs(requireContext()).edit().putBoolean("desaturated_color", desaturated)
                 .apply()
-            PreferenceUtil.isDesaturatedColor = desaturated
+            PreferenceUtil.getInstance(requireContext()).setDesaturatedColor(desaturated)
             requireActivity().recreate()
             true
         }
@@ -98,9 +111,12 @@ class ThemeSettingsFragment : AbsSettingsFragment() {
         if (!VersionUtils.hasNougatMR()) {
             colorAppShortcuts.isVisible = false
         } else {
-            colorAppShortcuts.isChecked = PreferenceUtil.isColoredAppShortcuts
+            colorAppShortcuts.isChecked =
+                PreferenceUtil.getInstance(requireContext()).coloredAppShortcuts()
             colorAppShortcuts.setOnPreferenceChangeListener { _, newValue ->
-                PreferenceUtil.isColoredAppShortcuts = newValue as Boolean
+                // Save preference
+                PreferenceUtil.getInstance(requireContext())
+                    .setColoredAppShortcuts(newValue as Boolean)
                 DynamicShortcutManager(requireContext()).updateDynamicShortcuts()
                 true
             }

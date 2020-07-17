@@ -5,45 +5,41 @@ import androidx.appcompat.app.AppCompatActivity
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.interfaces.CabHolder
-import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.model.CommonData
 import com.google.android.material.button.MaterialButton
 
 class ShuffleButtonSongAdapter(
     activity: AppCompatActivity,
-    dataSet: MutableList<Song>,
+    dataSet: MutableList<CommonData>,
     itemLayoutRes: Int,
     cabHolder: CabHolder?
 ) : AbsOffsetSongAdapter(activity, dataSet, itemLayoutRes, cabHolder) {
 
-    override fun createViewHolder(view: View): SongAdapter.ViewHolder {
-        return ViewHolder(view)
+    override fun createViewHolder(view: View, type: Int): SongAdapter.ViewHolder {
+        return ViewHolder(view, type)
     }
 
     override fun onBindViewHolder(holder: SongAdapter.ViewHolder, position: Int) {
         if (holder.itemViewType == OFFSET_ITEM) {
             val viewHolder = holder as ViewHolder
-            viewHolder.playAction?.let {
-                it.setOnClickListener {
-                    MusicPlayerRemote.openQueue(dataSet, 0, true)
-                }
+            viewHolder.playAction?.setOnClickListener {
+                MusicPlayerRemote.openQueue(activity, dataSet, 0, true)
             }
-            viewHolder.shuffleAction?.let {
-                it.setOnClickListener {
-                    MusicPlayerRemote.openAndShuffleQueue(dataSet, true)
-                }
+            viewHolder.shuffleAction?.setOnClickListener {
+                MusicPlayerRemote.openAndShuffleQueue(activity, dataSet, true)
             }
         } else {
             super.onBindViewHolder(holder, position - 1)
         }
     }
 
-    inner class ViewHolder(itemView: View) : AbsOffsetSongAdapter.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View, type: Int) : AbsOffsetSongAdapter.ViewHolder(itemView, type) {
         val playAction: MaterialButton? = itemView.findViewById(R.id.playAction)
         val shuffleAction: MaterialButton? = itemView.findViewById(R.id.shuffleAction)
 
         override fun onClick(v: View?) {
             if (itemViewType == OFFSET_ITEM) {
-                MusicPlayerRemote.openAndShuffleQueue(dataSet, true)
+                MusicPlayerRemote.openAndShuffleQueue(activity, dataSet, true)
                 return
             }
             super.onClick(v)

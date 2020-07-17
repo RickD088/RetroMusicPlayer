@@ -14,11 +14,15 @@
 
 package code.name.monkey.retromusic.model
 
+import android.os.Parcelable
+import code.name.monkey.retromusic.interfaces.CommonDataConverter
 import code.name.monkey.retromusic.util.MusicUtil
+import kotlinx.android.parcel.Parcelize
 import java.util.*
 
-class Artist {
-    val albums: ArrayList<Album>?
+@Parcelize
+class Artist constructor(val albums: ArrayList<Album> = arrayListOf()) : CommonDataConverter, Parcelable {
+//    var albums: ArrayList<Album>? = null
 
     val id: Int
         get() = safeGetFirstAlbum().artistId
@@ -52,13 +56,9 @@ class Artist {
             return songs
         }
 
-    constructor(albums: ArrayList<Album>) {
+    /*constructor(albums: ArrayList<Album>) : this() {
         this.albums = albums
-    }
-
-    constructor() {
-        this.albums = ArrayList()
-    }
+    }*/
 
     fun safeGetFirstAlbum(): Album {
         return if (albums!!.isEmpty()) Album() else albums[0]
@@ -67,4 +67,11 @@ class Artist {
     companion object {
         const val UNKNOWN_ARTIST_DISPLAY_NAME = "Unknown Artist"
     }
+
+    override fun convertToCommonData(): CommonData {
+        return CommonData(CommonData.TYPE_LOCAL_ARTIST, this)
+    }
+
+
+    override fun describeContents(): Int = 0
 }

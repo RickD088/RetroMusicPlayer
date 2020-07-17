@@ -18,19 +18,24 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.AudioColumns
-import code.name.monkey.retromusic.Constants.IS_MUSIC
+import code.name.monkey.retromusic.Constants.BASE_SELECTION
 import code.name.monkey.retromusic.Constants.baseProjection
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.providers.BlacklistStore
-
+import code.name.monkey.retromusic.providers.HistoryStore
+import code.name.monkey.retromusic.rest.music.model.SongBean
 import code.name.monkey.retromusic.util.PreferenceUtil
+import com.google.gson.Gson
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by hemanths on 10/08/17.
  */
 
 object SongLoader {
+
 
     fun getAllSongs(
         context: Context
@@ -46,6 +51,20 @@ object SongLoader {
         if (cursor != null && cursor.moveToFirst()) {
             do {
                 songs.add(getSongFromCursorImpl(cursor))
+            } while (cursor.moveToNext())
+        }
+
+        cursor?.close()
+        return songs
+    }
+
+    fun getSongsFromDataBase(cursor: Cursor?): ArrayList<CommonData> {
+        val songs = arrayListOf<CommonData>()
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                val data = getSongsFromCursorImpl(cursor)
+                println("SongLoader: songs type -> ${data.dataType}")
+                songs.add(data)
             } while (cursor.moveToNext())
         }
 
@@ -80,6 +99,25 @@ object SongLoader {
         return getSong(cursor)
     }
 
+    //从 HistoryStore.SongStoreColumns.NAME中读取
+    private fun getSongsFromCursorImpl(cursor: Cursor): CommonData {
+        val type = cursor.getInt(cursor.getColumnIndex(HistoryStore.SongStoreColumns.TYPE))
+        val songJson = cursor.getString(cursor.getColumnIndex(HistoryStore.SongStoreColumns.SONG))
+        return when (type) {
+            CommonData.TYPE_LOCAL_SONG -> {
+                val song = Gson().fromJson<Song>(songJson, Song::class.java)
+                CommonData(type, song)
+            }
+            CommonData.TYPE_CLOUD_SONG -> {
+                val song = Gson().fromJson<SongBean>(songJson, SongBean::class.java)
+                CommonData(type, cloudData = song)
+            }
+            else -> {
+                CommonData(CommonData.TYPE_EMPTY)
+            }
+        }
+    }
+
     private fun getSongFromCursorImpl(
         cursor: Cursor
     ): Song {
@@ -107,14 +145,14 @@ object SongLoader {
         context: Context,
         selection: String?,
         selectionValues: Array<String>?,
-        sortOrder: String = PreferenceUtil.songSortOrder
+        sortOrder: String = PreferenceUtil.getInstance(context).songSortOrder
     ): Cursor? {
         var selectionFinal = selection
         var selectionValuesFinal = selectionValues
         selectionFinal = if (selection != null && selection.trim { it <= ' ' } != "") {
-            "$IS_MUSIC AND $selectionFinal"
+            "$BASE_SELECTION AND $selectionFinal"
         } else {
-            IS_MUSIC
+            BASE_SELECTION
         }
 
         // Blacklist
@@ -128,8 +166,9 @@ object SongLoader {
             return context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 baseProjection,
-                selectionFinal + " AND " + MediaStore.Audio.Media.DURATION + ">= " +
-                        (PreferenceUtil.filterLength * 1000),
+                selectionFinal + " AND " + MediaStore.Audio.Media.DURATION + ">= " + (PreferenceUtil.getInstance(
+                    context
+                ).filterLength * 1000),
                 selectionValuesFinal,
                 sortOrder
             )

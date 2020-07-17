@@ -17,9 +17,14 @@ package code.name.monkey.retromusic.util
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.net.Uri
 import code.name.monkey.retromusic.R
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.WhichButton
+import com.afollestad.materialdialogs.actions.getActionButton
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 
 object AppRater {
     private const val DO_NOT_SHOW_AGAIN = "do_not_show_again"// Package Name
@@ -27,9 +32,8 @@ object AppRater {
     private const val LAUNCH_COUNT = "launch_count"// Package Name
     private const val DATE_FIRST_LAUNCH = "date_first_launch"// Package Name
 
-    private const val DAYS_UNTIL_PROMPT = 3//Min number of days
-    private const val LAUNCHES_UNTIL_PROMPT = 5//Min number of launches
-
+    private const val DAYS_UNTIL_PROMPT = 2//Min number of days
+    private const val LAUNCHES_UNTIL_PROMPT = 3//Min number of launches
     @JvmStatic
     fun appLaunched(context: Context) {
         val prefs = context.getSharedPreferences(APP_RATING, 0)
@@ -61,24 +65,28 @@ object AppRater {
     }
 
     private fun showRateDialog(context: Context, editor: SharedPreferences.Editor) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Rate this App")
-            .setMessage("If you enjoy using Retro Music, please take a moment to rate it. Thanks for your support!")
-            .setPositiveButton(R.string.app_name) { _, _ ->
-                context.startActivity(
-                    Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("market://details?id=${context.packageName}")
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
+            .show {
+
+                cornerRadius(PreferenceUtil.getInstance(context).dialogCorner)
+                title(text = "Rate this App")
+                message(text = "If you enjoy using this app, please take a moment to rate it. Thanks for your support!")
+                positiveButton(R.string.rate_app) {
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("market://details?id=${context.packageName}")
+                        )
                     )
-                )
-                editor.putBoolean(DO_NOT_SHOW_AGAIN, true)
-                editor.commit()
+                    editor.putBoolean(DO_NOT_SHOW_AGAIN, true)
+                    editor.commit()
+                    dismiss()
+                }
+                negativeButton(text = "Later") {
+                    editor.putLong(DATE_FIRST_LAUNCH, System.currentTimeMillis())
+                    dismiss()
+                }
+                getActionButton(WhichButton.POSITIVE).updateTextColor(Color.RED)
             }
-            .setNeutralButton("Not now", null)
-            .setNegativeButton("No thanks") { _, _ ->
-                editor.putBoolean(DO_NOT_SHOW_AGAIN, true)
-                editor.commit()
-            }
-            .show()
     }
 }

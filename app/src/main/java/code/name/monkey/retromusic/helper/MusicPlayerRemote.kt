@@ -24,35 +24,38 @@ import android.os.Environment
 import android.os.IBinder
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import code.name.monkey.retromusic.abram.AbramAds
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.loaders.SongLoader
-import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.service.MusicService
-
 import code.name.monkey.retromusic.util.PreferenceUtil
 import java.io.File
 import java.util.*
+
 
 object MusicPlayerRemote {
     val TAG: String = MusicPlayerRemote::class.java.simpleName
     private val mConnectionMap = WeakHashMap<Context, ServiceBinder>()
     var musicService: MusicService? = null
-
+    var shouldShowAds = false
     @JvmStatic
     val isPlaying: Boolean
         get() = musicService != null && musicService!!.isPlaying
 
-    fun isPlaying(song: Song): Boolean {
+    fun isPlaying(song: CommonData): Boolean {
         return if (!isPlaying) {
             false
-        } else song.id == currentSong.id
+        } else song.getSongId() == currentSong.getSongId()
     }
 
-    val currentSong: Song
+    val currentSong: CommonData
         get() = if (musicService != null) {
             musicService!!.currentSong
-        } else Song.emptySong
+        } else CommonData(CommonData.TYPE_EMPTY)
 
     /**
      * Async
@@ -66,12 +69,11 @@ object MusicPlayerRemote {
                 musicService!!.position = position
             }
         }
-
     @JvmStatic
-    val playingQueue: List<Song>
+    val playingQueue: ArrayList<CommonData>
         get() = if (musicService != null) {
-            musicService?.playingQueue as List<Song>
-        } else listOf<Song>()
+            musicService?.playingQueue as ArrayList<CommonData>
+        } else ArrayList()
 
     val songProgressMillis: Int
         get() = if (musicService != null) {
@@ -87,7 +89,6 @@ object MusicPlayerRemote {
         get() = if (musicService != null) {
             musicService!!.repeatMode
         } else MusicService.REPEAT_MODE_NONE
-
     @JvmStatic
     val shuffleMode: Int
         get() = if (musicService != null) {
@@ -172,32 +173,32 @@ object MusicPlayerRemote {
         musicService?.playSongAt(position)
     }
 
-    fun pauseSong() {
+    fun pauseSong(activity: Activity? = null) {
         musicService?.pause()
     }
 
     /**
      * Async
      */
-    fun playNextSong() {
+    fun playNextSong(activity: Activity? = null) {
         musicService?.playNextSong(true)
     }
 
     /**
      * Async
      */
-    fun playPreviousSong() {
+    fun playPreviousSong(activity: Activity? = null) {
         musicService?.playPreviousSong(true)
     }
 
     /**
      * Async
      */
-    fun back() {
+    fun back(activity: Activity? = null) {
         musicService?.back(true)
     }
 
-    fun resumePlaying() {
+    fun resumePlaying(activity: Activity? = null) {
         musicService?.play()
     }
 
@@ -205,7 +206,22 @@ object MusicPlayerRemote {
      * Async
      */
     @JvmStatic
-    fun openQueue(queue: List<Song>, startPosition: Int, startPlaying: Boolean) {
+    fun openQueue(activity: Activity, queue: List<CommonData>, startPosition: Int, startPlaying: Boolean) {
+        if (queue.isNotEmpty() && startPosition > -1) {
+            val song = if (queue.size > startPosition) queue[startPosition] else queue[0]
+            AbramAds.showDialogBeforeOpenMusic(activity, song,
+                View.OnClickListener {
+                    openQueue(queue, startPosition, startPlaying)
+                }
+            )
+        }
+    }
+
+    /**
+     * Async
+     */
+    @JvmStatic
+    fun openQueue(queue: List<CommonData>, startPosition: Int, startPlaying: Boolean) {
         if (!tryToHandleOpenPlayingQueue(
                 queue,
                 startPosition,
@@ -213,7 +229,7 @@ object MusicPlayerRemote {
             ) && musicService != null
         ) {
             musicService?.openQueue(queue, startPosition, startPlaying)
-            if (PreferenceUtil.isShuffleModeOn)
+            if (PreferenceUtil.getInstance(musicService).isShuffleModeOn)
                 setShuffleMode(MusicService.SHUFFLE_MODE_NONE)
         }
     }
@@ -222,25 +238,24 @@ object MusicPlayerRemote {
      * Async
      */
     @JvmStatic
-    fun openAndShuffleQueue(queue: List<Song>, startPlaying: Boolean) {
+    fun openAndShuffleQueue(activity: Activity, queue: List<CommonData>, startPlaying: Boolean) {
         var startPosition = 0
         if (queue.isNotEmpty()) {
             startPosition = Random().nextInt(queue.size)
         }
-
-        if (!tryToHandleOpenPlayingQueue(
-                queue,
-                startPosition,
-                startPlaying
-            ) && musicService != null
-        ) {
-            openQueue(queue, startPosition, startPlaying)
-            setShuffleMode(MusicService.SHUFFLE_MODE_SHUFFLE)
+        if (queue.isNotEmpty()) {
+            val song = if (queue.size > startPosition) queue[startPosition] else queue[0]
+            AbramAds.showDialogBeforeOpenMusic(activity, song,
+                View.OnClickListener {
+                    openQueue(queue, startPosition, startPlaying)
+                    setShuffleMode(MusicService.SHUFFLE_MODE_SHUFFLE)
+                }
+            )
         }
     }
 
     private fun tryToHandleOpenPlayingQueue(
-        queue: List<Song>,
+        queue: List<CommonData>,
         startPosition: Int,
         startPlaying: Boolean
     ): Boolean {
@@ -291,12 +306,12 @@ object MusicPlayerRemote {
         return false
     }
 
-    fun playNext(song: Song): Boolean {
+    fun playNext(song: CommonData): Boolean {
         if (musicService != null) {
             if (playingQueue.size > 0) {
                 musicService?.addSong(position + 1, song)
             } else {
-                val queue = ArrayList<Song>()
+                val queue = ArrayList<CommonData>()
                 queue.add(song)
                 openQueue(queue, 0, false)
             }
@@ -310,7 +325,7 @@ object MusicPlayerRemote {
         return false
     }
 
-    fun playNext(songs: List<Song>): Boolean {
+    fun playNext(songs: List<CommonData>): Boolean {
         if (musicService != null) {
             if (playingQueue.size > 0) {
                 musicService?.addSongs(position + 1, songs)
@@ -328,12 +343,12 @@ object MusicPlayerRemote {
         return false
     }
 
-    fun enqueue(song: Song): Boolean {
+    fun enqueue(song: CommonData): Boolean {
         if (musicService != null) {
             if (playingQueue.size > 0) {
                 musicService?.addSong(song)
             } else {
-                val queue = ArrayList<Song>()
+                val queue = ArrayList<CommonData>()
                 queue.add(song)
                 openQueue(queue, 0, false)
             }
@@ -347,7 +362,7 @@ object MusicPlayerRemote {
         return false
     }
 
-    fun enqueue(songs: List<Song>): Boolean {
+    fun enqueue(songs: List<CommonData>): Boolean {
         if (musicService != null) {
             if (playingQueue.size > 0) {
                 musicService?.addSongs(songs)
@@ -366,7 +381,7 @@ object MusicPlayerRemote {
     }
 
     @JvmStatic
-    fun removeFromQueue(song: Song): Boolean {
+    fun removeFromQueue(song: CommonData): Boolean {
         if (musicService != null) {
             musicService!!.removeSong(song)
             return true
@@ -401,8 +416,7 @@ object MusicPlayerRemote {
     @JvmStatic
     fun playFromUri(uri: Uri) {
         if (musicService != null) {
-
-            var songs: List<Song>? = null
+            var songs: List<CommonData>? = null
             if (uri.scheme != null && uri.authority != null) {
                 if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
                     var songId: String? = null
@@ -418,7 +432,7 @@ object MusicPlayerRemote {
                                 MediaStore.Audio.AudioColumns._ID + "=?",
                                 arrayOf(songId)
                             )
-                        )
+                        ).toCommonData()
                     }
                 }
             }
@@ -446,7 +460,7 @@ object MusicPlayerRemote {
                             MediaStore.Audio.AudioColumns.DATA + "=?",
                             arrayOf(songFile.absolutePath)
                         )
-                    )
+                    ).toCommonData()
                 }
             }
             if (songs != null && songs.isNotEmpty()) {
@@ -460,8 +474,7 @@ object MusicPlayerRemote {
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private fun getSongIdFromMediaProvider(uri: Uri): String {
-        return DocumentsContract.getDocumentId(uri).split(":".toRegex())
-            .dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+        return DocumentsContract.getDocumentId(uri).split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
     }
 
     class ServiceBinder internal constructor(private val mCallback: ServiceConnection?) :

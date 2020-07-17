@@ -62,8 +62,9 @@ class ArtistImageFetcher(
     }
 
     override fun loadData(priority: Priority?): InputStream? {
-        if (!MusicUtil.isArtistNameUnknown(model.artistName) &&
-            PreferenceUtil.isAllowedToDownloadMetadata()
+        if (!MusicUtil.isArtistNameUnknown(model.artistName) && PreferenceUtil.isAllowedToDownloadMetadata(
+                context
+            )
         ) {
             val artists = model.artistName.split(",")
             val response = deezerApiService.getArtistImage(artists[0]).execute()

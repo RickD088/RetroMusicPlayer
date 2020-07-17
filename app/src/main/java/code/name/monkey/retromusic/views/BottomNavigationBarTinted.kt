@@ -36,7 +36,8 @@ class BottomNavigationBarTinted @JvmOverloads constructor(
 ) : BottomNavigationView(context, attrs, defStyleAttr) {
 
     init {
-        labelVisibilityMode = PreferenceUtil.tabTitleMode
+        labelVisibilityMode = PreferenceUtil.getInstance(context).tabTitleMode
+        selectedItemId = PreferenceUtil.getInstance(context).lastPage
 
         val iconColor = ATHUtil.resolveColor(context, android.R.attr.colorControlNormal)
         val accentColor = ThemeStore.accentColor(context)

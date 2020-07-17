@@ -6,10 +6,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.core.app.ShareCompat
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
-import code.name.monkey.retromusic.App
+import code.name.monkey.appthemehelper.util.ATHUtil
+import code.name.monkey.appthemehelper.util.ToolbarContentTintHelper
+import code.name.monkey.retromusic.BuildConfig
 import code.name.monkey.retromusic.Constants.APP_INSTAGRAM_LINK
 import code.name.monkey.retromusic.Constants.APP_TELEGRAM_LINK
 import code.name.monkey.retromusic.Constants.APP_TWITTER_LINK
@@ -20,11 +23,18 @@ import code.name.monkey.retromusic.Constants.RATE_ON_GOOGLE_PLAY
 import code.name.monkey.retromusic.Constants.TELEGRAM_CHANGE_LOG
 import code.name.monkey.retromusic.Constants.TRANSLATE
 import code.name.monkey.retromusic.R
+import code.name.monkey.retromusic.abram.Constants
+import code.name.monkey.retromusic.abram.RemoteConfig
 import code.name.monkey.retromusic.activities.base.AbsBaseActivity
 import code.name.monkey.retromusic.adapter.ContributorAdapter
-import code.name.monkey.retromusic.extensions.applyToolbar
+import code.name.monkey.retromusic.extensions.show
 import code.name.monkey.retromusic.model.Contributor
 import code.name.monkey.retromusic.util.NavigationUtil
+import code.name.monkey.retromusic.util.PreferenceUtil
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.list.listItems
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_about.*
@@ -37,7 +47,7 @@ import java.nio.charset.StandardCharsets
 
 class AboutActivity : AbsBaseActivity(), View.OnClickListener {
 
-    private val contributorsJson: String?
+    private val assetJsonData: String?
         get() {
             val json: String
             try {
@@ -51,6 +61,7 @@ class AboutActivity : AbsBaseActivity(), View.OnClickListener {
                 ex.printStackTrace()
                 return null
             }
+
             return json
         }
 
@@ -62,10 +73,17 @@ class AboutActivity : AbsBaseActivity(), View.OnClickListener {
         setNavigationbarColorAuto()
         setLightNavigationBar(true)
 
-        applyToolbar(toolbar)
+        val toolbarColor = ATHUtil.resolveColor(this, R.attr.colorSurface)
+        toolbar.setBackgroundColor(toolbarColor)
+        ToolbarContentTintHelper.colorBackButton(toolbar)
+        setSupportActionBar(toolbar)
         version.setSummary(getAppVersion())
         setUpView()
         loadContributors()
+        Toast.makeText(
+            this,
+            "${BuildConfig.VERSION_NAME}-${BuildConfig.BUILD_TYPE}-${(System.currentTimeMillis()- RemoteConfig.getInitTime())/ Constants.ONE_HOUR_MS}-${RemoteConfig.getFullPlayedCount()}",
+            Toast.LENGTH_LONG).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -111,17 +129,29 @@ class AboutActivity : AbsBaseActivity(), View.OnClickListener {
             R.id.donateLink -> NavigationUtil.goToSupportDevelopment(this)
             R.id.instagramLink -> openUrl(APP_INSTAGRAM_LINK)
             R.id.twitterLink -> openUrl(APP_TWITTER_LINK)
-            R.id.changelog -> openUrl(TELEGRAM_CHANGE_LOG)
+            R.id.changelog -> showChangeLogOptions()
             R.id.openSource -> NavigationUtil.goToOpenSource(this)
             R.id.bugReportLink -> NavigationUtil.bugReport(this)
         }
     }
 
+    private fun showChangeLogOptions() {
+        MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            cornerRadius(PreferenceUtil.getInstance(this@AboutActivity).dialogCorner)
+            listItems(items = listOf("Telegram Channel", "App")) { _, position, _ ->
+                if (position == 0) {
+                    openUrl(TELEGRAM_CHANGE_LOG)
+                } else {
+                    NavigationUtil.gotoWhatNews(this@AboutActivity)
+                }
+            }
+        }
+    }
+
     private fun getAppVersion(): String {
         return try {
-            val isPro = if (App.isProVersion()) "Pro" else "Free"
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
-            "${packageInfo.versionName} $isPro"
+            packageInfo.versionName
         } catch (e: PackageManager.NameNotFoundException) {
             e.printStackTrace()
             "0.0.0"
@@ -135,10 +165,11 @@ class AboutActivity : AbsBaseActivity(), View.OnClickListener {
     }
 
     private fun loadContributors() {
+        val data = assetJsonData
         val type = object : TypeToken<List<Contributor>>() {
 
         }.type
-        val contributors = Gson().fromJson<List<Contributor>>(contributorsJson, type)
+        val contributors = Gson().fromJson<List<Contributor>>(data, type)
 
         val contributorAdapter = ContributorAdapter(contributors)
         recyclerView.layoutManager = LinearLayoutManager(this)

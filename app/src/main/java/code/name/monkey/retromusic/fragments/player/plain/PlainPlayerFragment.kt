@@ -11,8 +11,8 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_plain_player.*
 
 class PlainPlayerFragment : AbsPlayerFragment() {
@@ -32,8 +32,8 @@ class PlainPlayerFragment : AbsPlayerFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = song.artistName
+        title.text = song.getSongTitle()
+        text.text = song.getSongSinger()
     }
 
     override fun onServiceConnected() {
@@ -94,9 +94,9 @@ class PlainPlayerFragment : AbsPlayerFragment() {
         return ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        plainPlaybackControlsFragment.setColor(color)
-        lastColor = color.primaryTextColor
+    override fun onColorChanged(color: Int) {
+        plainPlaybackControlsFragment.setDark(color)
+        lastColor = color
         callbacks!!.onPaletteColorChanged()
         ToolbarContentTintHelper.colorizeToolbar(
             playerToolbar,
@@ -109,9 +109,9 @@ class PlainPlayerFragment : AbsPlayerFragment() {
         toggleFavorite(MusicPlayerRemote.currentSong)
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }

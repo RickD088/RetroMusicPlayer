@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "604423449431",
+    "firebase_url": "https://music-test-aa1ae.firebaseio.com",
+    "project_id": "music-test-aa1ae",
+    "storage_bucket": "music-test-aa1ae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604423449431:android:eaf63e7fc042c7bd70ec12",
+        "android_client_info": {
+          "package_name": "free.music.reward.download.song"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "604423449431-261tpgog5maal3s6dsvtmt37tlu0mv3j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "free.music.reward.download.song",
+            "certificate_hash": "be23c5f6c006f7855a6b71d57e7711fb263a3127"
+          }
+        },
+        {
+          "client_id": "604423449431-9h3hob8kq5k7ujkl0lsqop7qret3mtpl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsqjcUIouGJGx3Gr0Hc6vA97JdodiBL2c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "604423449431-9h3hob8kq5k7ujkl0lsqop7qret3mtpl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,10 +21,12 @@ import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.util.PreferenceUtil
 
 object ArtistLoader {
-    private fun getSongLoaderSortOrder(): String {
-        return PreferenceUtil.artistSortOrder + ", " +
-                PreferenceUtil.artistAlbumSortOrder + ", " +
-                PreferenceUtil.artistSongSortOrder
+    private fun getSongLoaderSortOrder(context: Context): String {
+        return PreferenceUtil.getInstance(context).artistSortOrder + ", " + PreferenceUtil.getInstance(
+            context
+        ).artistAlbumSortOrder + ", " + PreferenceUtil.getInstance(
+            context
+        ).albumSongSortOrder
     }
 
     fun getAllArtists(context: Context): ArrayList<Artist> {
@@ -32,7 +34,7 @@ object ArtistLoader {
             SongLoader.makeSongCursor(
                 context,
                 null, null,
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         return splitIntoArtists(AlbumLoader.splitIntoAlbums(songs))
@@ -44,7 +46,7 @@ object ArtistLoader {
                 context,
                 AudioColumns.ARTIST + " LIKE ?",
                 arrayOf("%$query%"),
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         return splitIntoArtists(AlbumLoader.splitIntoAlbums(songs))
@@ -78,7 +80,7 @@ object ArtistLoader {
                 context,
                 AudioColumns.ARTIST_ID + "=?",
                 arrayOf(artistId.toString()),
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         return Artist(AlbumLoader.splitIntoAlbums(songs))

@@ -1,13 +1,16 @@
 package code.name.monkey.retromusic.adapter.song
 
+import android.graphics.PorterDuff.Mode
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicPlayerRemote.isPlaying
 import code.name.monkey.retromusic.helper.MusicPlayerRemote.playNextSong
 import code.name.monkey.retromusic.helper.MusicPlayerRemote.removeFromQueue
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.MusicUtil
 import code.name.monkey.retromusic.util.ViewUtil
@@ -21,10 +24,11 @@ import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultAct
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.action.SwipeResultActionRemoveItem
 import com.h6ah4i.android.widget.advrecyclerview.swipeable.annotation.SwipeableItemResults
 import me.zhanghai.android.fastscroll.PopupTextProvider
+import java.util.*
 
 class PlayingQueueAdapter(
     activity: AppCompatActivity,
-    dataSet: MutableList<Song>,
+    dataSet: ArrayList<CommonData>,
     private var current: Int,
     itemLayoutRes: Int
 ) : SongAdapter(
@@ -33,22 +37,48 @@ class PlayingQueueAdapter(
     SwipeableItemAdapter<PlayingQueueAdapter.ViewHolder>,
     PopupTextProvider {
 
-    private var songToRemove: Song? = null
+    private var color = -1
+    private var songToRemove: CommonData? = null
 
-    override fun createViewHolder(view: View): SongAdapter.ViewHolder {
-        return ViewHolder(view)
+    override fun createViewHolder(view: View, viewType: Int): SongAdapter.ViewHolder {
+        return ViewHolder(view, viewType)
     }
 
     override fun onBindViewHolder(holder: SongAdapter.ViewHolder, position: Int) {
         super.onBindViewHolder(holder, position)
+        val data = dataSet[position]
         holder.imageText?.text = (position - current).toString()
-        holder.time?.text = MusicUtil.getReadableDurationString(dataSet[position].duration)
+        if (data.localSong()) {
+            holder.time?.text =
+                MusicUtil.getReadableDurationString(dataSet[position].getLocalSong().duration)
+        } else if (data.cloudSong()) {
+            holder.time?.text =
+                MusicUtil.getReadableDurationString(dataSet[position].getCloudSong().getDuration())
+        }
         if (holder.itemViewType == HISTORY || holder.itemViewType == CURRENT) {
             setAlpha(holder, 0.5f)
         }
     }
 
+    private fun setColor(holder: SongAdapter.ViewHolder, white: Int) {
+
+        if (holder.title != null) {
+            holder.title!!.setTextColor(white)
+            if (color != -1) {
+                holder.title!!.setTextColor(color)
+            }
+        }
+
+        holder.text?.setTextColor(white)
+        holder.time?.setTextColor(white)
+        holder.imageText?.setTextColor(white)
+        if (holder.menu != null) {
+            (holder.menu as ImageView).setColorFilter(white, Mode.SRC_IN)
+        }
+    }
+
     override fun getItemViewType(position: Int): Int {
+        curType = dataSet[position].dataType
         if (position < current) {
             return HISTORY
         } else if (position > current) {
@@ -57,12 +87,12 @@ class PlayingQueueAdapter(
         return CURRENT
     }
 
-    override fun loadAlbumCover(song: Song, holder: SongAdapter.ViewHolder) {
+    override fun loadAlbumCover(song: CommonData, holder: SongAdapter.ViewHolder) {
         // We don't want to load it in this adapter
     }
 
-    fun swapDataSet(dataSet: List<Song>, position: Int) {
-        this.dataSet = dataSet.toMutableList()
+    fun swapDataSet(dataSet: ArrayList<CommonData>, position: Int) {
+        this.dataSet = dataSet
         current = position
         notifyDataSetChanged()
     }
@@ -83,7 +113,7 @@ class PlayingQueueAdapter(
     }
 
     override fun getPopupText(position: Int): String {
-        return MusicUtil.getSectionName(dataSet[position].title)
+        return MusicUtil.getSectionName(dataSet[position].getSongTitle())
     }
 
     override fun onCheckCanStartDrag(holder: ViewHolder, position: Int, x: Int, y: Int): Boolean {
@@ -114,11 +144,12 @@ class PlayingQueueAdapter(
         notifyDataSetChanged()
     }
 
-    fun setSongToRemove(song: Song) {
+    fun setSongToRemove(song: CommonData) {
         songToRemove = song
     }
 
-    inner class ViewHolder(itemView: View) : SongAdapter.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View, type: Int) : SongAdapter.ViewHolder(itemView, type) {
+
         @DraggableItemStateFlags
         private var mDragStateFlags: Int = 0
 
@@ -136,7 +167,7 @@ class PlayingQueueAdapter(
         override fun onSongMenuItemClick(item: MenuItem): Boolean {
             when (item.itemId) {
                 R.id.action_remove_from_playing_queue -> {
-                    removeFromQueue(layoutPosition)
+                    removeFromQueue(adapterPosition)
                     return true
                 }
             }
@@ -195,7 +226,7 @@ class PlayingQueueAdapter(
         private val activity: AppCompatActivity
     ) : SwipeResultActionRemoveItem() {
 
-        private var songToRemove: Song? = null
+        private var songToRemove: CommonData? = null
         private val isPlaying: Boolean = MusicPlayerRemote.isPlaying
         private val songProgressMillis = 0
         override fun onPerformAction() {
@@ -207,7 +238,7 @@ class PlayingQueueAdapter(
             songToRemove = adapter.dataSet[position]
             //If song removed was the playing song, then play the next song
             if (isPlaying(songToRemove!!)) {
-                playNextSong()
+                playNextSong(activity)
             }
             //Swipe animation is much smoother when we do the heavy lifting after it's completed
             adapter.setSongToRemove(songToRemove!!)

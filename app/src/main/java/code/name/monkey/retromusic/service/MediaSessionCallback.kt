@@ -18,6 +18,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v4.media.session.MediaSessionCompat
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicPlayerRemote.cycleRepeatMode
 import code.name.monkey.retromusic.model.Song
@@ -99,6 +100,6 @@ class MediaSessionCallback(
     }
 
     private fun openQueue(songs: ArrayList<Song>, index: Int, startPlaying: Boolean = true) {
-        MusicPlayerRemote.openQueue(songs, index, startPlaying)
+        MusicPlayerRemote.openQueue(songs.toCommonData(), index, startPlaying)
     }
 }

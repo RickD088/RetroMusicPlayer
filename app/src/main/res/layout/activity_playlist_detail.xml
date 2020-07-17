@@ -83,5 +83,6 @@
                 android:textColor="?android:attr/textColorSecondary"
                 tools:visibility="visible" />
         </LinearLayout>
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>

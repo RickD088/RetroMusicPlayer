@@ -11,8 +11,8 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_fit.*
 
 class FitFragment : AbsPlayerFragment() {
@@ -43,9 +43,9 @@ class FitFragment : AbsPlayerFragment() {
         return ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        playbackControlsFragment.setColor(color)
-        lastColor = color.primaryTextColor
+    override fun onColorChanged(color: Int) {
+        playbackControlsFragment.setDark(color)
+        lastColor = color
         callbacks?.onPaletteColorChanged()
         ToolbarContentTintHelper.colorizeToolbar(
             playerToolbar,
@@ -54,9 +54,9 @@ class FitFragment : AbsPlayerFragment() {
         )
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }
@@ -82,9 +82,10 @@ class FitFragment : AbsPlayerFragment() {
     private fun setUpSubFragments() {
         playbackControlsFragment =
             childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as FitPlaybackControlsFragment
-        val playerAlbumCoverFragment =
+        val playerAlbumCoverFragment: PlayerAlbumCoverFragment =
             childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment
         playerAlbumCoverFragment.setCallbacks(this)
+        playerAlbumCoverFragment.removeEffect()
     }
 
     private fun setUpPlayerToolbar() {

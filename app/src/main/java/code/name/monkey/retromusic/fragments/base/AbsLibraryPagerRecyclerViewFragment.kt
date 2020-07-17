@@ -6,10 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.NonNull
 import androidx.annotation.StringRes
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import code.name.monkey.retromusic.R
-import code.name.monkey.retromusic.fragments.LibraryViewModel
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.util.DensityUtil
 import code.name.monkey.retromusic.util.ThemedFastScroller.create
@@ -21,7 +19,6 @@ import me.zhanghai.android.fastscroll.FastScrollerBuilder
 
 abstract class AbsLibraryPagerRecyclerViewFragment<A : RecyclerView.Adapter<*>, LM : RecyclerView.LayoutManager> :
     AbsLibraryPagerFragment(), AppBarLayout.OnOffsetChangedListener {
-
 
     protected var adapter: A? = null
     protected var layoutManager: LM? = null
@@ -93,8 +90,6 @@ abstract class AbsLibraryPagerRecyclerViewFragment<A : RecyclerView.Adapter<*>, 
         }
     }
 
-
-
     private fun initLayoutManager() {
         layoutManager = createLayoutManager()
     }
@@ -109,7 +104,7 @@ abstract class AbsLibraryPagerRecyclerViewFragment<A : RecyclerView.Adapter<*>, 
             container.paddingLeft,
             container.paddingTop,
             container.paddingRight,
-            mainActivity.getTotalAppBarScrollingRange() + i
+            mainActivity.totalAppBarScrollingRange + i
         )
     }
 

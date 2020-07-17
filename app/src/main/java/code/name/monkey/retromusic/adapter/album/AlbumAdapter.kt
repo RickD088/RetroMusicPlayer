@@ -2,16 +2,18 @@ package code.name.monkey.retromusic.adapter.album
 
 import android.app.ActivityOptions
 import android.content.res.ColorStateList
-import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import code.name.monkey.appthemehelper.util.ColorUtil
+import code.name.monkey.appthemehelper.util.MaterialValueHelper
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.adapter.base.AbsMultiSelectAdapter
 import code.name.monkey.retromusic.adapter.base.MediaEntryViewHolder
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.glide.AlbumGlideRequest
 import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
@@ -23,19 +25,18 @@ import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.MusicUtil
 import code.name.monkey.retromusic.util.NavigationUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import com.bumptech.glide.Glide
 import me.zhanghai.android.fastscroll.PopupTextProvider
 
 open class AlbumAdapter(
-    protected val activity: AppCompatActivity,
-    var dataSet: List<Album>,
-    protected var itemLayoutRes: Int,
-    cabHolder: CabHolder?
+        protected val activity: AppCompatActivity,
+        var dataSet: List<Album>,
+        protected var itemLayoutRes: Int,
+        cabHolder: CabHolder?
 ) : AbsMultiSelectAdapter<AlbumAdapter.ViewHolder, Album>(
-    activity,
-    cabHolder,
-    R.menu.menu_media_selection
+        activity,
+        cabHolder,
+        R.menu.menu_media_selection
 ), PopupTextProvider {
 
     init {
@@ -48,12 +49,7 @@ open class AlbumAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view =
-            try {
-                LayoutInflater.from(activity).inflate(itemLayoutRes, parent, false)
-            } catch (e: Resources.NotFoundException) {
-                LayoutInflater.from(activity).inflate(R.layout.item_grid, parent, false)
-            }
+        val view = LayoutInflater.from(activity).inflate(itemLayoutRes, parent, false)
         return createViewHolder(view, viewType)
     }
 
@@ -78,22 +74,33 @@ open class AlbumAdapter(
         holder.playSongs?.setOnClickListener {
             album.songs?.let { songs ->
                 MusicPlayerRemote.openQueue(
-                    songs,
-                    0,
-                    true
+                        activity,
+                        songs.toCommonData(),
+                        0,
+                        true
                 )
             }
         }
         loadAlbumCover(album, holder)
     }
 
-    protected open fun setColors(color: MediaNotificationProcessor, holder: ViewHolder) {
+    protected open fun setColors(color: Int, holder: ViewHolder) {
         if (holder.paletteColorContainer != null) {
-            holder.title?.setTextColor(color.primaryTextColor)
-            holder.text?.setTextColor(color.secondaryTextColor)
-            holder.paletteColorContainer?.setBackgroundColor(color.backgroundColor)
+            holder.title?.setTextColor(
+                    MaterialValueHelper.getPrimaryTextColor(
+                            activity,
+                            ColorUtil.isColorLight(color)
+                    )
+            )
+            holder.text?.setTextColor(
+                    MaterialValueHelper.getSecondaryTextColor(
+                            activity,
+                            ColorUtil.isColorLight(color)
+                    )
+            )
+            holder.paletteColorContainer?.setBackgroundColor(color)
         }
-        holder.mask?.backgroundTintList = ColorStateList.valueOf(color.primaryTextColor)
+        holder.mask?.backgroundTintList = ColorStateList.valueOf(color)
     }
 
     protected open fun loadAlbumCover(album: Album, holder: ViewHolder) {
@@ -102,19 +109,19 @@ open class AlbumAdapter(
         }
 
         AlbumGlideRequest.Builder.from(Glide.with(activity), album.safeGetFirstSong())
-            .checkIgnoreMediaStore(activity)
-            .generatePalette(activity)
-            .build()
-            .into(object : RetroMusicColoredTarget(holder.image!!) {
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    super.onLoadCleared(placeholder)
-                    //setColors(defaultFooterColor, holder)
-                }
+                .checkIgnoreMediaStore(activity)
+                .generatePalette(activity)
+                .build()
+                .into(object : RetroMusicColoredTarget(holder.image!!) {
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                        super.onLoadCleared(placeholder)
+                        //setColors(defaultFooterColor, holder)
+                    }
 
-                override fun onColorReady(colors: MediaNotificationProcessor) {
-                    setColors(colors, holder)
-                }
-            })
+                    override fun onColorReady(color: Int) {
+                        setColors(color, holder)
+                    }
+                })
     }
 
     override fun getItemCount(): Int {
@@ -134,9 +141,9 @@ open class AlbumAdapter(
     }
 
     override fun onMultipleItemAction(
-        menuItem: MenuItem, selection: ArrayList<Album>
+            menuItem: MenuItem, selection: ArrayList<Album>
     ) {
-        SongsMenuHelper.handleMenuClick(activity, getSongList(selection), menuItem.itemId)
+        SongsMenuHelper.handleMenuClick(activity, getSongList(selection).toCommonData(), menuItem.itemId)
     }
 
     private fun getSongList(albums: List<Album>): ArrayList<Song> {
@@ -153,12 +160,12 @@ open class AlbumAdapter(
 
     private fun getSectionName(position: Int): String {
         var sectionName: String? = null
-        when (PreferenceUtil.albumSortOrder) {
+        when (PreferenceUtil.getInstance(activity).albumSortOrder) {
             SortOrder.AlbumSortOrder.ALBUM_A_Z, SortOrder.AlbumSortOrder.ALBUM_Z_A -> sectionName =
-                dataSet[position].title
+                    dataSet[position].title
             SortOrder.AlbumSortOrder.ALBUM_ARTIST -> sectionName = dataSet[position].artistName
             SortOrder.AlbumSortOrder.ALBUM_YEAR -> return MusicUtil.getYearString(
-                dataSet[position].year
+                    dataSet[position].year
             )
         }
 
@@ -175,23 +182,24 @@ open class AlbumAdapter(
         override fun onClick(v: View?) {
             super.onClick(v)
             if (isInQuickSelectMode) {
-                toggleChecked(layoutPosition)
+                toggleChecked(adapterPosition)
             } else {
                 val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
-                    activity,
-                    imageContainerCard ?: image,
-                    activity.getString(R.string.transition_album_art)
+                        activity,
+                        imageContainerCard ?: image,
+                        "${activity.getString(R.string.transition_album_art)}_${dataSet[adapterPosition].id}"
                 )
                 NavigationUtil.goToAlbumOptions(
-                    activity,
-                    dataSet[layoutPosition].id,
-                    activityOptions
+                        activity,
+                        dataSet[adapterPosition].id,
+                        dataSet[adapterPosition].convertToCommonData(),
+                        activityOptions
                 )
             }
         }
 
         override fun onLongClick(v: View?): Boolean {
-            toggleChecked(layoutPosition)
+            toggleChecked(adapterPosition)
             return super.onLongClick(v)
         }
     }

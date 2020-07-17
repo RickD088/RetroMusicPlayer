@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.dialogs.AddToPlaylistDialog
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.loaders.GenreLoader
 import code.name.monkey.retromusic.model.Genre
@@ -30,20 +31,20 @@ object GenreMenuHelper {
     fun handleMenuClick(activity: AppCompatActivity, genre: Genre, item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_play -> {
-                MusicPlayerRemote.openQueue(getGenreSongs(activity, genre), 0, true)
+                MusicPlayerRemote.openQueue(activity, getGenreSongs(activity, genre).toCommonData(), 0, true)
                 return true
             }
             R.id.action_play_next -> {
-                MusicPlayerRemote.playNext(getGenreSongs(activity, genre))
+                MusicPlayerRemote.playNext(getGenreSongs(activity, genre).toCommonData())
                 return true
             }
             R.id.action_add_to_playlist -> {
-                AddToPlaylistDialog.create(getGenreSongs(activity, genre))
+                AddToPlaylistDialog.create(getGenreSongs(activity, genre).toCommonData())
                     .show(activity.supportFragmentManager, "ADD_PLAYLIST")
                 return true
             }
             R.id.action_add_to_current_playing -> {
-                MusicPlayerRemote.enqueue(getGenreSongs(activity, genre))
+                MusicPlayerRemote.enqueue(getGenreSongs(activity, genre).toCommonData())
                 return true
             }
         }

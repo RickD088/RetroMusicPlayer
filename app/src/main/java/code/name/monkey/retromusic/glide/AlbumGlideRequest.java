@@ -2,6 +2,8 @@ package code.name.monkey.retromusic.glide;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 
 import androidx.annotation.NonNull;
 
@@ -70,7 +72,7 @@ public class AlbumGlideRequest {
 
         @NonNull
         public Builder checkIgnoreMediaStore(@NonNull Context context) {
-            return ignoreMediaStore(PreferenceUtil.INSTANCE.isIgnoreMediaStoreArtwork());
+            return ignoreMediaStore(PreferenceUtil.getInstance(context).ignoreMediaStoreArtwork());
         }
 
         @NonNull
@@ -84,7 +86,7 @@ public class AlbumGlideRequest {
             //noinspection unchecked
             return createBaseRequest(requestManager, song, ignoreMediaStore)
                     .diskCacheStrategy(DEFAULT_DISK_CACHE_STRATEGY)
-                    .error(DEFAULT_ERROR_IMAGE)
+                    .error(new ColorDrawable(Color.RED))
                     .animate(DEFAULT_ANIMATION)
                     .signature(createSignature(song));
         }
@@ -93,7 +95,7 @@ public class AlbumGlideRequest {
     public static class BitmapBuilder {
         private final Builder builder;
 
-        BitmapBuilder(Builder builder) {
+        public BitmapBuilder(Builder builder) {
             this.builder = builder;
         }
 
@@ -102,18 +104,18 @@ public class AlbumGlideRequest {
             return createBaseRequest(builder.requestManager, builder.song, builder.ignoreMediaStore)
                     .asBitmap()
                     .diskCacheStrategy(DEFAULT_DISK_CACHE_STRATEGY)
-                    .error(DEFAULT_ERROR_IMAGE)
+                    .error(new ColorDrawable(Color.GREEN))
                     .animate(DEFAULT_ANIMATION)
-                    .dontTransform()
                     .signature(createSignature(builder.song));
         }
     }
 
     public static class PaletteBuilder {
-        private final Context context;
+        private static final String TAG = "PaletteBuilder";
+        final Context context;
         private final Builder builder;
 
-        PaletteBuilder(Builder builder, Context context) {
+        public PaletteBuilder(Builder builder, Context context) {
             this.builder = builder;
             this.context = context;
         }

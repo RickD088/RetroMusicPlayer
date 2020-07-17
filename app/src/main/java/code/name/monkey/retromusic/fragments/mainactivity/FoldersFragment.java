@@ -55,11 +55,13 @@ import code.name.monkey.appthemehelper.ThemeStore;
 import code.name.monkey.appthemehelper.util.ATHUtil;
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.adapter.SongFileAdapter;
+import code.name.monkey.retromusic.extensions.ArrayListExKt;
 import code.name.monkey.retromusic.fragments.base.AbsMainActivityFragment;
 import code.name.monkey.retromusic.helper.MusicPlayerRemote;
 import code.name.monkey.retromusic.helper.menu.SongMenuHelper;
 import code.name.monkey.retromusic.helper.menu.SongsMenuHelper;
 import code.name.monkey.retromusic.interfaces.CabHolder;
+import code.name.monkey.retromusic.interfaces.LoaderIds;
 import code.name.monkey.retromusic.interfaces.MainActivityFragmentCallbacks;
 import code.name.monkey.retromusic.misc.DialogAsyncTask;
 import code.name.monkey.retromusic.misc.UpdateToastMediaScannerCompletionListener;
@@ -86,12 +88,11 @@ public class FoldersFragment extends AbsMainActivityFragment implements
             FileUtil.fileIsMimeType(file, "application/ogg", MimeTypeMap.getSingleton()));
     private static final String PATH = "path";
     private static final String CRUMBS = "crumbs";
-    private static final int LOADER_ID = 5;
+    private static final int LOADER_ID = LoaderIds.Companion.getFOLDERS_FRAGMENT();
     private SongFileAdapter adapter;
     private BreadCrumbLayout breadCrumbs;
     private MaterialCab cab;
-    private View coordinatorLayout;
-    private View empty;
+    private View coordinatorLayout, empty;
     private TextView emojiText;
     private Comparator<File> fileComparator = (lhs, rhs) -> {
         if (lhs.isDirectory() && !rhs.isDirectory()) {
@@ -133,7 +134,7 @@ public class FoldersFragment extends AbsMainActivityFragment implements
     }
 
     public static FoldersFragment newInstance(Context context) {
-        return newInstance(PreferenceUtil.INSTANCE.getStartDirectory());
+        return newInstance(PreferenceUtil.getInstance(context).getStartDirectory());
     }
 
     private static File tryGetCanonicalFile(File file) {
@@ -231,13 +232,13 @@ public class FoldersFragment extends AbsMainActivityFragment implements
                     case R.id.action_delete_from_device:
                         new ListSongsAsyncTask(getActivity(), null, (songs, extra) -> {
                             if (!songs.isEmpty()) {
-                                SongsMenuHelper.INSTANCE.handleMenuClick(getActivity(), songs, itemId);
+                                SongsMenuHelper.INSTANCE.handleMenuClick(getActivity(), ArrayListExKt.toCommonData(songs), itemId);
                             }
                         }).execute(new ListSongsAsyncTask.LoadingInfo(toList(file), AUDIO_FILE_FILTER,
                                 getFileComparator()));
                         return true;
                     case R.id.action_set_as_start_directory:
-                        PreferenceUtil.INSTANCE.setStartDirectory(file);
+                        PreferenceUtil.getInstance(requireContext()).setStartDirectory(file);
                         Toast.makeText(getActivity(),
                                 String.format(getString(R.string.new_start_directory), file.getPath()),
                                 Toast.LENGTH_SHORT).show();
@@ -266,7 +267,7 @@ public class FoldersFragment extends AbsMainActivityFragment implements
                     case R.id.action_delete_from_device:
                         new ListSongsAsyncTask(getActivity(), null,
                                 (songs, extra) -> SongMenuHelper.INSTANCE.handleMenuClick(getActivity(),
-                                        songs.get(0), itemId))
+                                        songs.get(0).convertToCommonData(), itemId))
                                 .execute(new ListSongsAsyncTask.LoadingInfo(toList(file), AUDIO_FILE_FILTER,
                                         getFileComparator()));
                         return true;
@@ -299,17 +300,17 @@ public class FoldersFragment extends AbsMainActivityFragment implements
                     }
                 }
                 if (startIndex > -1) {
-                    MusicPlayerRemote.INSTANCE.openQueue(songs, startIndex, true);
+                    MusicPlayerRemote.INSTANCE.openQueue(requireActivity(), ArrayListExKt.toCommonData(songs), startIndex, true);
                 } else {
                     final File finalFile = file1;
                     Snackbar.make(coordinatorLayout, Html.fromHtml(
                             String.format(getString(R.string.not_listed_in_media_store), file1.getName())),
                             Snackbar.LENGTH_LONG)
                             .setAction(R.string.action_scan,
-                                    v -> new ListPathsAsyncTask(requireActivity(), this::scanPaths)
+                                    v -> new ListPathsAsyncTask(getActivity(), this::scanPaths)
                                             .execute(
                                                     new ListPathsAsyncTask.LoadingInfo(finalFile, AUDIO_FILE_FILTER)))
-                            .setActionTextColor(ThemeStore.Companion.accentColor(requireActivity()))
+                            .setActionTextColor(ThemeStore.Companion.accentColor(getActivity()))
                             .show();
                 }
             }).execute(new ListSongsAsyncTask.LoadingInfo(toList(file.getParentFile()), fileFilter,
@@ -331,7 +332,7 @@ public class FoldersFragment extends AbsMainActivityFragment implements
     public void onMultipleItemAction(MenuItem item, ArrayList<File> files) {
         final int itemId = item.getItemId();
         new ListSongsAsyncTask(getActivity(), null,
-                (songs, extra) -> SongsMenuHelper.INSTANCE.handleMenuClick(getActivity(), songs, itemId))
+                (songs, extra) -> SongsMenuHelper.INSTANCE.handleMenuClick(getActivity(), ArrayListExKt.toCommonData(songs), itemId))
                 .execute(new ListSongsAsyncTask.LoadingInfo(files, AUDIO_FILE_FILTER, getFileComparator()));
     }
 
@@ -340,7 +341,7 @@ public class FoldersFragment extends AbsMainActivityFragment implements
         switch (item.getItemId()) {
             case R.id.action_go_to_start_directory:
                 setCrumb(new BreadCrumbLayout.Crumb(
-                        tryGetCanonicalFile(PreferenceUtil.INSTANCE.getStartDirectory())), true);
+                        tryGetCanonicalFile(PreferenceUtil.getInstance(requireContext()).getStartDirectory())), true);
                 return true;
             case R.id.action_scan:
                 BreadCrumbLayout.Crumb crumb = getActiveCrumb();

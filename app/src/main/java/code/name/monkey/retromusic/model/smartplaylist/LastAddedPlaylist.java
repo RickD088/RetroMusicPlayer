@@ -25,7 +25,7 @@ import java.util.ArrayList;
 
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.loaders.LastAddedSongsLoader;
-import code.name.monkey.retromusic.model.Song;
+import code.name.monkey.retromusic.model.CommonData;
 
 
 public class LastAddedPlaylist extends AbsSmartPlaylist {
@@ -41,7 +41,7 @@ public class LastAddedPlaylist extends AbsSmartPlaylist {
     };
 
     public LastAddedPlaylist(@NonNull Context context) {
-        super(context.getString(R.string.last_added), R.drawable.ic_library_add_white_24dp);
+        super(context.getString(R.string.my_download), R.drawable.ic_library_add_white_24dp);
     }
 
     protected LastAddedPlaylist(Parcel in) {
@@ -59,8 +59,8 @@ public class LastAddedPlaylist extends AbsSmartPlaylist {
 
     @NonNull
     @Override
-    public ArrayList<Song> getSongs(@NotNull @NonNull Context context) {
-        return LastAddedSongsLoader.INSTANCE.getLastAddedSongs(context);
+    public ArrayList<CommonData> getSongs(@NotNull @NonNull Context context) {
+        return LastAddedSongsLoader.INSTANCE.getDownloadSongs(context);
     }
 
     @Override

@@ -14,16 +14,25 @@
 
 package code.name.monkey.retromusic.mvp.presenter
 
+import code.name.monkey.retromusic.Result.Success
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.model.Artist
-import code.name.monkey.retromusic.rest.model.LastFmAlbum
+import code.name.monkey.retromusic.model.CommonData
+import code.name.monkey.retromusic.mvp.Presenter
+import code.name.monkey.retromusic.mvp.PresenterImpl
+import code.name.monkey.retromusic.providers.interfaces.Repository
+import code.name.monkey.retromusic.rest.lastfm.model.LastFmAlbum
+import code.name.monkey.retromusic.rest.music.model.MusicSongs
+import kotlinx.coroutines.*
+import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by hemanths on 20/08/17.
  */
 interface AlbumDetailsView {
 
-    fun album(album: Album)
+    fun album(album: CommonData)
 
     fun complete()
 
@@ -32,4 +41,75 @@ interface AlbumDetailsView {
     fun moreAlbums(albums: List<Album>)
 
     fun aboutAlbum(lastFmAlbum: LastFmAlbum)
+}
+
+interface AlbumDetailsPresenter : Presenter<AlbumDetailsView> {
+    fun loadAlbum(albumId: Int, local: Boolean)
+
+    fun loadMore(artistId: Int)
+
+    fun aboutAlbum(artist: String, album: String)
+
+    class AlbumDetailsPresenterImpl @Inject constructor(
+            private val repository: Repository
+    ) : PresenterImpl<AlbumDetailsView>(), AlbumDetailsPresenter, CoroutineScope {
+
+        private val job = Job()
+        private lateinit var album: Album
+
+        override fun loadMore(artistId: Int) {
+            launch {
+                when (val result = repository.artistById(artistId)) {
+                    is Success -> withContext(Dispatchers.Main) { showArtistImage(result.data) }
+                    is Error -> withContext(Dispatchers.Main) {}
+                }
+            }
+        }
+
+        override fun aboutAlbum(artist: String, album: String) {
+            launch {
+                when (val result = repository.albumInfo(artist, album)) {
+                    is Success -> withContext(Dispatchers.Main) { view.aboutAlbum(result.data) }
+                    is Error -> withContext(Dispatchers.Main) {}
+                }
+            }
+        }
+
+        private fun showArtistImage(artist: Artist) {
+            view?.loadArtistImage(artist)
+
+            artist.albums?.filter { it.id != album.id }?.let {
+                if (it.isNotEmpty()) view?.moreAlbums(ArrayList(it))
+            }
+        }
+
+        override fun loadAlbum(albumId: Int, local: Boolean) {
+            launch {
+                if (local) {
+                    when (val result = repository.albumById(albumId)) {
+                        is Success -> withContext(Dispatchers.Main) {
+                            album = result.data
+                            view?.album(result.data.convertToCommonData())
+                        }
+                        is Error -> withContext(Dispatchers.Main) { view?.complete() }
+                    }
+                } else {
+                    when (val result = repository.playlistById(albumId)) {
+                        is Success -> withContext(Dispatchers.Main) {
+                            view?.album(MusicSongs(CommonData.TYPE_CLOUD_PLAYLIST_SONG, result.data).convertToCommonData())
+                        }
+                        is Error -> withContext(Dispatchers.Main) { view?.complete() }
+                    }
+                }
+            }
+        }
+
+        override fun detachView() {
+            super.detachView()
+            job.cancel()
+        }
+
+        override val coroutineContext: CoroutineContext
+            get() = Dispatchers.IO + job
+    }
 }

@@ -51,8 +51,8 @@ class CustomArtistImageUtil private constructor(context: Context) {
         Glide.with(App.getContext())
             .load(uri)
             .asBitmap()
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .skipMemoryCache(false)
             .into(object : SimpleTarget<Bitmap>() {
                 override fun onLoadFailed(e: Exception?, errorDrawable: Drawable?) {
                     super.onLoadFailed(e, errorDrawable)

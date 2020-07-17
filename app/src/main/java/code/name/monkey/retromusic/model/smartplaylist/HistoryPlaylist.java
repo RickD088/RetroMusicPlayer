@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.loaders.TopAndRecentlyPlayedTracksLoader;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Song;
 import code.name.monkey.retromusic.providers.HistoryStore;
 
@@ -63,7 +64,18 @@ public class HistoryPlaylist extends AbsSmartPlaylist {
 
     @NonNull
     @Override
-    public ArrayList<Song> getSongs(@NotNull @NonNull Context context) {
+    public ArrayList<CommonData> getSongs(@NotNull @NonNull Context context) {
         return TopAndRecentlyPlayedTracksLoader.INSTANCE.getRecentlyPlayedTracks(context);
+    }
+
+    public ArrayList<Song> getLocalSong(Context context){
+       ArrayList<CommonData> dataList = TopAndRecentlyPlayedTracksLoader.INSTANCE.getRecentlyPlayedTracks(context);
+       ArrayList<Song> localSongs = new ArrayList<>();
+       for (CommonData commonData :dataList){
+           if (commonData.localSong()){
+               localSongs.add(commonData.getLocalSong());
+           }
+       }
+       return localSongs;
     }
 }

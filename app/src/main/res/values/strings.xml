@@ -105,11 +105,11 @@
     <string name="app_shortcut_shuffle_all_short">Shuffle</string>
     <string name="app_shortcut_top_tracks_short">Top Tracks</string>
 
-    <string name="app_widget_big_name">Full Image</string>
-    <string name="app_widget_card_name">Card</string>
-    <string name="app_widget_classic_name">Classic</string>
-    <string name="app_widget_small_name">Small</string>
-    <string name="app_widget_text_name">Minimal Text</string>
+    <string name="app_widget_big_name">Retro music - Big</string>
+    <string name="app_widget_card_name">Retro music - Card</string>
+    <string name="app_widget_classic_name">Retro music - Classic</string>
+    <string name="app_widget_small_name">Retro music - Small</string>
+    <string name="app_widget_text_name">Retro music - Text</string>
 
     <string name="artist">Artist</string>
 
@@ -163,8 +163,6 @@
     <string name="card_color_style">Colored Card</string>
 
     <string name="card_style">Card</string>
-
-    <string name="card_square">Square Card</string>
 
     <string name="carousal">Carousel</string>
 
@@ -333,7 +331,7 @@
 
     <string name="inserted_x_songs_into_playlist_x">Inserted %1$d songs into the playlist %2$s.</string>
 
-    <string name="instagram_page" translatable="false">Instagram</string>
+    <string name="instagram_page">Instagram</string>
     <string name="instagram_page_summary">Share your Retro Music setup to showcase on Instagram</string>
 
     <string name="keyboard">Keyboard</string>
@@ -374,6 +372,8 @@
     <string name="loading_products">Loading products…</string>
 
     <string name="login">Login</string>
+
+    <string name="logout">Logout</string>
 
     <string name="lyrics">Lyrics</string>
 
@@ -846,36 +846,106 @@
     <string name="start_payment">Start payment</string>
     <string name="pref_title_expand_now_playing_panel">Show now playing screen</string>
     <string name="pref_summary_expand_now_playing_panel">Clicking on the notification will show now playing screen instead of the home screen</string>
+    <string name="my_download">My Downloads</string>
+    <string name="save_failed">Failed to download</string>
+    <string name="network_unavailable">Network unavailable</string>
+    <string name="saved">Download completed</string>
+    <string name="file_exist">Downloaded already</string>
+    <string name="download">Download</string>
+        
+    <string name="cached">Cached</string>
+    <string name="downloading">Downloading</string>
+    <string name="waiting_to_download">Waiting to download</string>
+    <string name="continue_downloading">Continue downloading</string>
+    <string name="online">Online</string>
 
-    <string name="tiny_card_style">Tiny card</string>
-    <string name="about_album_label">About %s</string>
-    <string name="pref_language_name">Select language</string>
-    <string name="translators">Translators</string>
-    <string name="translators_summary">The people who helped translate this app</string>
-    <string name="try_retro_music_premium">Try Retro Music Premium</string>
-    <string name="share_summary">Share the app with your friends and family</string>
-    <string name="help_summary">Need more help?</string>
-    <string name="gradient">Gradient</string>
-    <string name="user_name">User Name</string>
+    <string name="register_success">Sign-in successfully</string>
+    <string name="register_failed">Sign-in failed</string>
+    <string name="data_sync_success">Data download successfully</string>
+    <string name="data_sync_failed">Data download failed</string>
+    <string name="today_listened">Today Listened</string>
+    <string name="unit_minute">Mins</string>
+    <string name="goal">Goal: 30 mins</string>
+    <string name="double_gems">Got %d More Gems</string>
+    <string name="daily_check_in">Daily Check-in</string>
+    <string name="check_in">Check in</string>
+    <string name="day_1">Day1</string>
+    <string name="day_2">Day2</string>
+    <string name="day_3">Day3</string>
+    <string name="day_4">Day4</string>
+    <string name="day_5">Day5</string>
+    <string name="day_6">Day6</string>
+    <string name="day_7">Day7</string>
+    <string name="played">Played</string>
+    <string name="downloaded">Downloaded</string>
+    <string name="go">GO</string>
+    <string name="complete_puzzle">Complete Puzzle to</string>
+    <string name="puzzle_reset_date">The puzzle will reset on %s</string>
+    <string name="puzzle_pieces_percent">100% Get Puzzle Pieces</string>
+    <string name="check_in_bonus">Check-in Bonus</string>
+    <string name="congratulation">Congratulations</string>
+    <string name="piece_for_u">A puzzle piece for you！</string>
+    <string name="collect_pieces_to_win_prize">Collect %d more pieces to win prize</string>
+    <string name="stop_to_collect">Cut your puzzle piece, Good luck!</string>
+    <string name="stop_spin">Cut</string>
+    <string name="already_have_piece">Oops, you already have that piece, try next time!</string>
+    <string name="got_new_piece">Wow! You just got a new piece!</string>
+    <string name="ok">OK</string>
+    <string name="claim">Claim</string>
+    <string name="waiting_to_claim">Wait few more time to get gems</string>
+    <string name="spin_to_win_pieces">Spin to Win</string>
+    <string name="got_gems">Wow！Got %d Gems</string>
+    <string name="gift">Earn</string>
+    <string name="refresh_later">will refresh in %dm</string>
+    <string name="minutes_later">%dm later</string>
+    <string name="to_listen">Listen 30 minutes music first</string>
+    <string name="today_claimed">Today claimed</string>
+    <string name="spin_count">Spins: %d</string>
+    <string name="spin_consume">20 Gems/Spin</string>
+    <string name="get_more_spins">Get more spins</string>
+    <string name="watch_video">Watch video</string>
+    <string name="watch_video_fully">Watch video FULLY to get more</string>
+    <string name="add_spins">Spins +1</string>
+    <string name="watch">Watch</string>
+    <string name="get_more_pieces">Get more puzzle pieces</string>
+    <string name="random_puzzle">Radom Puzzle x1</string>
+    <string name="exchange_by_gems">Exchange by gems</string>
+    <string name="not_enough_gems">Not enough Gems!</string>
+    <string name="amazon_card_label">Amazon Gift Card</string>
+    <string name="paypal_card_label">PayPal Cash</string>
+    <string name="target_card_label">Target GiftCard</string>
+    <string name="starbucks_card_label">Starbucks Gift Card</string>
+    <string name="google_card_label">Google Play Gift Code</string>
+    <string name="walmart_card_label">Walmart eGift Card</string>
 
-    <plurals name="albumSongs">
-        <item quantity="one">Song</item>
-        <item quantity="other">Songs</item>
-    </plurals>
-    <plurals name="albums">
-        <item quantity="one">Album</item>
-        <item quantity="other">Albums</item>
-    </plurals>
-    <plurals name="numSongs">
-        <item quantity="one">%d Song</item>
-        <item quantity="other">%d Songs</item>
-    </plurals>
-    <plurals name="numAlbums">
-        <item quantity="one">%d Album</item>
-        <item quantity="other">%d Albums</item>
-    </plurals>
-    <plurals name="numArtists">
-        <item quantity="one">%d Artist</item>
-        <item quantity="other">%d Artists</item>
-    </plurals>
+    <string name="daily_tasks">Daily Tasks</string>
+    <string name="complete_daily_tasks">Complete all daily tasks</string>
+    <string name="jackpot_bonus">Jackpot Bonus</string>
+
+    <string name="earn">Earn</string>
+    <string name="one_hundred_dollar">$100 for free</string>
+    <string name="twenty_dollar">$20 for free</string>
+    <string name="twenty_five_dollar">$25 for free</string>
+    <string name="fifty_dollar">$50 for free</string>
+    <string name="reset_on">Reset on %s</string>
+    <string name="earned">Earned: %d%%</string>
+    <string name="earn_gift_card">Earn your gift cards</string>
+    <string name="load_more">Load More</string>
+    <string name="loading">Loading...</string>
+    <string name="searched">Searched</string>
+    <string name="complete_task_please">Complete the task please</string>
+    <string name="get_cash">You get CASH!</string>
+    <string name="cash_prefix">+$%.2f</string>
+    <string name="deposit_to_balance">Deposit it into your balance</string>
+    <string name="deposit">Deposit</string>
+    <string name="your_balance">Your balance</string>
+    <string name="balance">Balance</string>
+    <string name="cashout">Cashout</string>
+    <string name="cashout_threshold">$%d Cashout</string>
+    <string name="cashout_warning">You\'re only $%.2f from cashing out! Keep going!</string>
+    <string name="got_it">Got it</string>
+    <string name="cashout_tips">Please input your PayPal account to receive the money.</string>
+    <string name="proceed_tips">Your request will be proceed in 7 business days.</string>
+    <string name="input_account_please">Input your account please</string>
+    <string name="example_email">example@example.com</string>
 </resources>

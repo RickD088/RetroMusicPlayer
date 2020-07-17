@@ -97,12 +97,16 @@ class AppWidgetClassic : BaseAppWidget() {
         val song = service.currentSong
 
         // Set the titles and artwork
-        if (TextUtils.isEmpty(song.title) && TextUtils.isEmpty(song.artistName)) {
+        if (TextUtils.isEmpty(song.getSongTitle()) && TextUtils.isEmpty(song.getSongSinger())) {
             appWidgetView.setViewVisibility(R.id.media_titles, View.INVISIBLE)
         } else {
             appWidgetView.setViewVisibility(R.id.media_titles, View.VISIBLE)
-            appWidgetView.setTextViewText(R.id.title, song.title)
-            appWidgetView.setTextViewText(R.id.text, getSongArtistAndAlbum(song))
+            appWidgetView.setTextViewText(R.id.title, song.getSongTitle())
+            if (song.localSong()) {
+                appWidgetView.setTextViewText(R.id.text, getSongArtistAndAlbum(song.getLocalSong()))
+            } else if (song.cloudSong()) {
+                appWidgetView.setTextViewText(R.id.text, service.getString(R.string.online)) // song.getCloudSong().channelTitle)
+            }
         }
 
         // Link actions buttons to intents

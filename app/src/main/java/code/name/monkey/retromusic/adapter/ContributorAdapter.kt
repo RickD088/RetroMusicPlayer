@@ -11,6 +11,7 @@ import code.name.monkey.retromusic.model.Contributor
 import code.name.monkey.retromusic.util.RetroUtil.openUrl
 import code.name.monkey.retromusic.views.RetroShapeableImageView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class ContributorAdapter(
     private var contributors: List<Contributor>
@@ -72,6 +73,7 @@ class ContributorAdapter(
                 .error(R.drawable.ic_account_white_24dp)
                 .placeholder(R.drawable.ic_account_white_24dp)
                 .dontAnimate()
+                .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false)
                 .into(image)
         }
     }

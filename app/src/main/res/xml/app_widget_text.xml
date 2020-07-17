@@ -3,7 +3,6 @@
     android:initialLayout="@layout/app_widget_text"
     android:minWidth="@dimen/app_widget_small_min_width"
     android:minHeight="@dimen/app_widget_small_min_height"
-    android:previewImage="@drawable/widget_text"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="keyguard|home_screen" />

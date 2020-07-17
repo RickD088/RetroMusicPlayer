@@ -194,11 +194,10 @@ public class RetroColorUtil {
 
     @ColorInt
     public static int shiftBackgroundColorForDarkText(@ColorInt int backgroundColor) {
-        int color = backgroundColor;
         while (!ColorUtil.INSTANCE.isColorLight(backgroundColor)) {
-            color = ColorUtil.INSTANCE.lightenColor(backgroundColor);
+            backgroundColor = ColorUtil.INSTANCE.lightenColor(backgroundColor);
         }
-        return color;
+        return backgroundColor;
     }
 
     private static class SwatchComparator implements Comparator<Palette.Swatch> {

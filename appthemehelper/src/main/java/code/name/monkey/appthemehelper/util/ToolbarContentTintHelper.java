@@ -17,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
+
 import androidx.annotation.CheckResult;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
@@ -35,8 +36,10 @@ import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.appcompat.widget.ToolbarWidgetWrapper;
 import androidx.core.graphics.drawable.DrawableCompat;
+
 import code.name.monkey.appthemehelper.R;
 import code.name.monkey.appthemehelper.ThemeStore;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
@@ -88,7 +91,7 @@ public final class ToolbarContentTintHelper {
         }
 
         public static void applyOverflowMenuTint(final @NonNull Context context, final Toolbar toolbar,
-                final @ColorInt int color) {
+                                                 final @ColorInt int color) {
             if (toolbar == null) {
                 return;
             }
@@ -121,7 +124,7 @@ public final class ToolbarContentTintHelper {
         }
 
         public static void setOverflowButtonColor(@NonNull Activity activity,
-                final @ColorInt int color) {
+                                                  final @ColorInt int color) {
             final String overflowDescription = activity
                     .getString(R.string.abc_action_menu_overflow_description);
             final ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
@@ -143,7 +146,7 @@ public final class ToolbarContentTintHelper {
         }
 
         public static void setTintForMenuPopupHelper(final @NonNull Context context,
-                @Nullable MenuPopupHelper menuPopupHelper, final @ColorInt int color) {
+                                                     @Nullable MenuPopupHelper menuPopupHelper, final @ColorInt int color) {
             try {
                 if (menuPopupHelper != null) {
                     final ListView listView = ((ShowableListMenu) menuPopupHelper.getPopup()).getListView();
@@ -204,7 +207,7 @@ public final class ToolbarContentTintHelper {
 
         @SuppressWarnings("unchecked")
         public static void tintMenu(@NonNull Toolbar toolbar, @Nullable Menu menu,
-                final @ColorInt int color) {
+                                    final @ColorInt int color) {
             try {
                 final Field field = Toolbar.class.getDeclaredField("mCollapseIcon");
                 field.setAccessible(true);
@@ -247,7 +250,7 @@ public final class ToolbarContentTintHelper {
         private Toolbar mToolbar;
 
         public ATHMenuPresenterCallback(Context context, final @ColorInt int color,
-                MenuPresenter.Callback parentCb, Toolbar toolbar) {
+                                        MenuPresenter.Callback parentCb, Toolbar toolbar) {
             mContext = context;
             mColor = color;
             mParentCb = parentCb;
@@ -279,7 +282,7 @@ public final class ToolbarContentTintHelper {
         private Toolbar mToolbar;
 
         public ATHOnMenuItemClickListener(Context context, final @ColorInt int color,
-                Toolbar.OnMenuItemClickListener parentCb, Toolbar toolbar) {
+                                          Toolbar.OnMenuItemClickListener parentCb, Toolbar toolbar) {
             mContext = context;
             mColor = color;
             mParentListener = parentCb;
@@ -304,6 +307,16 @@ public final class ToolbarContentTintHelper {
         }
     }
 
+    public static void colorBackButton(@NonNull Toolbar toolbar, int color) {
+        final PorterDuffColorFilter colorFilter = new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY);
+        for (int i = 0; i < toolbar.getChildCount(); i++) {
+            final View backButton = toolbar.getChildAt(i);
+            if (backButton instanceof ImageView) {
+                ((ImageView) backButton).getDrawable().setColorFilter(colorFilter);
+            }
+        }
+    }
+
     /**
      * Use this method to colorize toolbar icons to the desired target color
      *
@@ -312,7 +325,7 @@ public final class ToolbarContentTintHelper {
      * @param activity          reference to activity needed to register observers
      */
     public static void colorizeToolbar(Toolbar toolbarView, int toolbarIconsColor,
-            Activity activity) {
+                                       Activity activity) {
         final PorterDuffColorFilter colorFilter = new PorterDuffColorFilter(toolbarIconsColor,
                 PorterDuff.Mode.MULTIPLY);
 
@@ -389,8 +402,8 @@ public final class ToolbarContentTintHelper {
     }
 
     public static void handleOnCreateOptionsMenu(Context context, Toolbar toolbar, Menu menu,
-            @ColorInt int toolbarContentColor, @ColorInt int titleTextColor,
-            @ColorInt int subtitleTextColor, @ColorInt int menuWidgetColor) {
+                                                 @ColorInt int toolbarContentColor, @ColorInt int titleTextColor,
+                                                 @ColorInt int subtitleTextColor, @ColorInt int menuWidgetColor) {
         setToolbarContentColor(context, toolbar, menu, toolbarContentColor, titleTextColor,
                 subtitleTextColor, menuWidgetColor);
     }
@@ -400,25 +413,25 @@ public final class ToolbarContentTintHelper {
     }
 
     public static void handleOnPrepareOptionsMenu(Activity activity, Toolbar toolbar,
-            int widgetColor) {
+                                                  int widgetColor) {
         InternalToolbarContentTintUtil.applyOverflowMenuTint(activity, toolbar, widgetColor);
     }
 
     public static void setToolbarContentColor(@NonNull Context context, Toolbar toolbar,
-            final @ColorInt int toolbarContentColor, final @ColorInt int primaryTextColor,
-            final @ColorInt int secondaryTextColor, final @ColorInt int menuWidgetColor) {
+                                              final @ColorInt int toolbarContentColor, final @ColorInt int primaryTextColor,
+                                              final @ColorInt int secondaryTextColor, final @ColorInt int menuWidgetColor) {
         setToolbarContentColor(context, toolbar, null, toolbarContentColor, primaryTextColor,
                 secondaryTextColor, menuWidgetColor);
     }
 
     @SuppressWarnings("unchecked")
     public static void setToolbarContentColor(@NonNull Context context,
-            Toolbar toolbar,
-            @Nullable Menu menu,
-            final @ColorInt int toolbarContentColor,
-            final @ColorInt int titleTextColor,
-            final @ColorInt int subtitleTextColor,
-            final @ColorInt int menuWidgetColor) {
+                                              Toolbar toolbar,
+                                              @Nullable Menu menu,
+                                              final @ColorInt int toolbarContentColor,
+                                              final @ColorInt int titleTextColor,
+                                              final @ColorInt int subtitleTextColor,
+                                              final @ColorInt int menuWidgetColor) {
         if (toolbar == null) {
             return;
         }
@@ -483,8 +496,8 @@ public final class ToolbarContentTintHelper {
     }
 
     public static void setToolbarContentColorBasedOnToolbarColor(@NonNull Context context,
-            Toolbar toolbar,
-            int toolbarColor) {
+                                                                 Toolbar toolbar,
+                                                                 int toolbarColor) {
         setToolbarContentColorBasedOnToolbarColor(context, toolbar, null, toolbarColor);
     }
 
@@ -543,12 +556,12 @@ public final class ToolbarContentTintHelper {
     }
 
     private static void removeOnGlobalLayoutListener(View v,
-            ViewTreeObserver.OnGlobalLayoutListener listener) {
+                                                     ViewTreeObserver.OnGlobalLayoutListener listener) {
         v.getViewTreeObserver().removeOnGlobalLayoutListener(listener);
     }
 
     private static void setOverflowButtonColor(final Activity activity, final Toolbar toolbar,
-            final int toolbarIconsColor) {
+                                               final int toolbarIconsColor) {
         final ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
         final ViewTreeObserver viewTreeObserver = decorView.getViewTreeObserver();
         viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -569,7 +582,7 @@ public final class ToolbarContentTintHelper {
      * the overflow icon. Check: res/values/styles.xml
      */
     private static void setOverflowButtonColor(final Activity activity,
-            final PorterDuffColorFilter colorFilter) {
+                                               final PorterDuffColorFilter colorFilter) {
         final String overflowDescription = activity
                 .getString(R.string.abc_action_menu_overflow_description);
         final ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();

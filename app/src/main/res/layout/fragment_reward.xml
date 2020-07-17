@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <View
+            android:id="@+id/bg_header"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="?attr/giftBg"
+            android:scaleType="centerCrop"
+            app:layout_constraintDimensionRatio="h,1:1.7"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/btn_ad"
+            android:layout_width="48dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/icon_ad"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/btn_daily"
+            android:layout_width="33dp"
+            android:layout_height="35dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/icon_daily"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:translationX="6dp"
+            android:translationY="-6dp"
+            app:shimmer_base_alpha="1"
+            app:shimmer_highlight_alpha="0.6"
+            app:shimmer_duration="300"
+            app:shimmer_repeat_delay="600"
+            app:layout_constraintRight_toRightOf="@id/btn_daily"
+            app:layout_constraintTop_toTopOf="@id/btn_daily"
+            app:layout_constraintVertical_bias="0.5">
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/checkin_flag"
+                android:visibility="gone"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_red_dot"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="@color/mi_text_color_secondary_dark"
+                android:textSize="13sp"
+                tools:visibility="visible" />
+        </com.facebook.shimmer.ShimmerFrameLayout>
+
+        <code.name.monkey.retromusic.views.ArcProgress
+            android:id="@+id/progress"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginTop="50dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_daily" />
+
+        <TextView
+            android:id="@+id/tv_label"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:text="@string/today_listened"
+            android:textColor="?attr/giftTextColor"
+            android:textSize="12dp"
+            app:layout_constraintLeft_toLeftOf="@id/progress"
+            app:layout_constraintRight_toRightOf="@id/progress"
+            app:layout_constraintTop_toTopOf="@id/progress" />
+
+        <TextView
+            android:id="@+id/tv_playing_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/arc_progress_color"
+            android:textSize="40dp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@id/progress"
+            app:layout_constraintLeft_toLeftOf="@id/progress"
+            app:layout_constraintRight_toRightOf="@id/progress"
+            app:layout_constraintTop_toTopOf="@id/progress" />
+
+        <TextView
+            android:id="@+id/tv_goal"
+            android:layout_width="wrap_content"
+            android:layout_height="22dp"
+            android:layout_marginTop="25dp"
+            android:background="@drawable/round_text_radius_10"
+            android:gravity="center"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/goal"
+            android:textColor="@color/arc_progress_color"
+            app:layout_constraintLeft_toLeftOf="@id/tv_playing_time"
+            app:layout_constraintRight_toRightOf="@id/tv_playing_time"
+            app:layout_constraintTop_toBottomOf="@id/tv_playing_time" />
+
+        <TextView
+            android:id="@+id/tv_reward_1"
+            style="@style/FreePrizeText"
+            android:background="@drawable/selector_claim_free"
+            android:text="\?"
+            android:textSize="6dp"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="250"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <TextView
+            android:id="@+id/tv_reward_2"
+            style="@style/FreePrizeText"
+            android:background="@drawable/selector_claim_free"
+            android:text="\?"
+            android:textSize="6dp"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="285"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <TextView
+            android:id="@+id/tv_reward_3"
+            style="@style/FreePrizeText"
+            android:background="@drawable/selector_claim_free"
+            android:text="\?"
+            android:textSize="6dp"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="330"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <TextView
+            android:id="@+id/tv_reward_4"
+            style="@style/FreePrizeText"
+            android:background="@drawable/selector_claim_free"
+            android:text="\?"
+            android:textSize="6dp"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="30"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <TextView
+            android:id="@+id/tv_reward_5"
+            style="@style/FreePrizeText"
+            android:background="@drawable/selector_claim_free"
+            android:text="\?"
+            android:textSize="6dp"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="75"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <TextView
+            android:id="@+id/tv_reward_6"
+            android:layout_width="78dp"
+            android:layout_height="78dp"
+            android:textSize="6dp"
+            android:background="@drawable/selector_claim_free_cup"
+            app:layout_constraintCircle="@id/progress"
+            app:layout_constraintCircleAngle="110"
+            app:layout_constraintCircleRadius="130dp" />
+
+        <View
+            android:id="@+id/bg_status"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_goal" />
+
+        <TextView
+            android:id="@+id/tv_played_label"
+            style="@style/LabelText"
+            android:text="@string/played"
+            app:layout_constraintBottom_toTopOf="@+id/tv_played"
+            app:layout_constraintEnd_toStartOf="@id/tv_downloaded_label"
+            app:layout_constraintStart_toStartOf="@+id/bg_status"
+            app:layout_constraintTop_toTopOf="@+id/bg_status"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/tv_played"
+            style="@style/StatusText"
+            app:layout_constraintBottom_toBottomOf="@+id/bg_status"
+            app:layout_constraintEnd_toEndOf="@+id/tv_played_label"
+            app:layout_constraintStart_toStartOf="@+id/tv_played_label"
+            app:layout_constraintTop_toBottomOf="@id/tv_played_label" />
+
+        <TextView
+            android:id="@+id/tv_downloaded_label"
+            style="@style/LabelText"
+            android:text="@string/downloaded"
+            app:layout_constraintBottom_toTopOf="@+id/tv_downloaded"
+            app:layout_constraintEnd_toStartOf="@+id/tv_searched_label"
+            app:layout_constraintStart_toEndOf="@id/tv_played_label"
+            app:layout_constraintTop_toTopOf="@+id/bg_status"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/tv_downloaded"
+            style="@style/StatusText"
+            app:layout_constraintBottom_toBottomOf="@+id/bg_status"
+            app:layout_constraintEnd_toEndOf="@+id/tv_downloaded_label"
+            app:layout_constraintStart_toStartOf="@+id/tv_downloaded_label"
+            app:layout_constraintTop_toBottomOf="@id/tv_downloaded_label" />
+
+        <TextView
+            android:id="@+id/tv_searched_label"
+            style="@style/LabelText"
+            android:text="@string/searched"
+            app:layout_constraintBottom_toTopOf="@+id/tv_searched"
+            app:layout_constraintEnd_toEndOf="@+id/bg_status"
+            app:layout_constraintStart_toEndOf="@id/tv_downloaded_label"
+            app:layout_constraintTop_toTopOf="@+id/bg_status"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/tv_searched"
+            style="@style/StatusText"
+            app:layout_constraintBottom_toBottomOf="@+id/bg_status"
+            app:layout_constraintEnd_toEndOf="@+id/tv_searched_label"
+            app:layout_constraintStart_toStartOf="@+id/tv_searched_label"
+            app:layout_constraintTop_toBottomOf="@id/tv_searched_label" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/earn_gift_card"
+            android:textColor="?attr/giftCardTextColor"
+            android:textSize="18dp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/paypal_layout"
+            app:layout_constraintStart_toStartOf="@id/paypal_layout" />
+
+        <include
+            android:id="@+id/paypal_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="196dp"
+            android:background="@drawable/pic_collect"
+            app:layout_constraintEnd_toStartOf="@id/amazon_layout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_goal" />
+
+        <include
+            android:id="@+id/amazon_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/pic_collect"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/paypal_layout"
+            app:layout_constraintTop_toTopOf="@+id/paypal_layout" />
+
+        <include
+            android:id="@+id/google_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            app:layout_constraintLeft_toLeftOf="@id/paypal_layout"
+            app:layout_constraintRight_toRightOf="@id/paypal_layout"
+            app:layout_constraintTop_toBottomOf="@id/paypal_layout" />
+
+        <include
+            android:id="@+id/starbucks_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="@id/amazon_layout"
+            app:layout_constraintStart_toStartOf="@id/amazon_layout"
+            app:layout_constraintTop_toTopOf="@id/google_layout" />
+
+        <include
+            android:id="@+id/walmart_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            app:layout_constraintLeft_toLeftOf="@id/google_layout"
+            app:layout_constraintRight_toRightOf="@id/google_layout"
+            app:layout_constraintTop_toBottomOf="@id/google_layout" />
+
+        <include
+            android:id="@+id/target_layout"
+            layout="@layout/layout_card_puzzle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="@id/amazon_layout"
+            app:layout_constraintStart_toStartOf="@id/amazon_layout"
+            app:layout_constraintTop_toTopOf="@id/walmart_layout" />
+
+        <Space
+            android:id="@+id/space"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            app:layout_constraintTop_toBottomOf="@id/target_layout" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

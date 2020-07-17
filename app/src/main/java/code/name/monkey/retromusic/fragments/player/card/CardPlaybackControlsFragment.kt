@@ -24,9 +24,7 @@ import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
 import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_card_player_playback_controls.*
 import kotlinx.android.synthetic.main.media_button.*
 
@@ -54,9 +52,9 @@ class CardPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
         playPauseButton.setOnClickListener {
             if (MusicPlayerRemote.isPlaying) {
-                MusicPlayerRemote.pauseSong()
+                MusicPlayerRemote.pauseSong(activity)
             } else {
-                MusicPlayerRemote.resumePlaying()
+                MusicPlayerRemote.resumePlaying(activity)
             }
             showBonceAnimation(playPauseButton)
         }
@@ -66,10 +64,10 @@ class CardPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = song.artistName
+        title.text = song.getSongTitle()
+        text.text = song.getSongSinger()
 
-        if (PreferenceUtil.isSongInfo) {
+        if (PreferenceUtil.getInstance(requireContext()).isSongInfo) {
             songInfo.text = getSongInfo(MusicPlayerRemote.currentSong)
             songInfo.show()
         } else {
@@ -111,8 +109,14 @@ class CardPlaybackControlsFragment : AbsPlayerControlsFragment() {
         updateShuffleState()
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
-        if (!ATHUtil.isWindowBackgroundDark(requireContext())
+    override fun setDark(color: Int) {
+
+        if (ColorUtil.isColorLight(
+                ATHUtil.resolveColor(
+                    requireContext(),
+                    android.R.attr.windowBackground
+                )
+            )
         ) {
             lastPlaybackControlsColor = MaterialValueHelper.getSecondaryTextColor(activity, true)
             lastDisabledPlaybackControlsColor =
@@ -129,8 +133,8 @@ class CardPlaybackControlsFragment : AbsPlayerControlsFragment() {
         updatePlayPauseColor()
         updateProgressTextColor()
 
-        val colorFinal = if (PreferenceUtil.isAdaptiveColor) {
-            color.primaryTextColor
+        val colorFinal = if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            color
         } else {
             ThemeStore.accentColor(requireContext()).ripAlpha()
         }
@@ -171,8 +175,8 @@ class CardPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {

@@ -47,7 +47,6 @@ public class WriteTagsAsyncTask extends
     @NonNull
     @Override
     protected Dialog createDialog(@NonNull Context context) {
-
         return new MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.saving_changes)
                 .setCancelable(false)

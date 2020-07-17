@@ -31,6 +31,7 @@ abstract class AbsLibraryPagerRecyclerViewCustomGridSizeFragment<A : RecyclerVie
 
 
     fun setAndSaveLayoutRes(layoutRes: Int) {
+        setLayoutRes(layoutRes)
         saveLayoutRes(layoutRes)
         invalidateAdapter()
     }
@@ -106,6 +107,8 @@ abstract class AbsLibraryPagerRecyclerViewCustomGridSizeFragment<A : RecyclerVie
     protected abstract fun setGridSize(gridSize: Int)
 
     protected abstract fun setSortOrder(sortOrder: String)
+
+    protected abstract fun setLayoutRes(layoutRes: Int)
 
     protected abstract fun loadSortOrder(): String
 

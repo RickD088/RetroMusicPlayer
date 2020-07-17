@@ -34,8 +34,7 @@ class SearchShortCutType(context: Context) : BaseShortcutType(context) {
         get() = ShortcutInfo.Builder(
             context,
             id
-        ).setShortLabel(context.getString(R.string.action_search))
-            .setLongLabel(context.getString(R.string.search_hint)).setIcon(
+        ).setShortLabel(context.getString(R.string.action_search)).setLongLabel(context.getString(R.string.action_search)).setIcon(
             AppShortcutIconGenerator.generateThemedIcon(
                 context,
                 R.drawable.ic_app_shortcut_search

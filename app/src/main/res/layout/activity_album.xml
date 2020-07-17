@@ -32,7 +32,6 @@
                 <com.google.android.material.appbar.MaterialToolbar
                     android:id="@+id/toolbar"
                     style="@style/Toolbar"
-                    android:background="?attr/colorSurface"
                     app:navigationIcon="@drawable/ic_keyboard_backspace_black_24dp" />
 
                 <ViewStub
@@ -47,7 +46,6 @@
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:overScrollMode="never"
             app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -55,17 +53,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <com.google.android.material.card.MaterialCardView
+                <code.name.monkey.retromusic.views.WidthFitSquareCardView
                     android:id="@+id/albumCoverContainer"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginEnd="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
                     android:transitionName="@string/transition_album_art"
                     app:cardCornerRadius="24dp"
-                    app:cardElevation="0dp"
-                    app:layout_constraintDimensionRatio="1:1"
+                    app:cardElevation="8dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
@@ -77,21 +72,22 @@
                         android:scaleType="centerCrop"
                         tools:srcCompat="@tools:sample/backgrounds/scenic[5]" />
 
-                </com.google.android.material.card.MaterialCardView>
+                </code.name.monkey.retromusic.views.WidthFitSquareCardView>
+
 
                 <code.name.monkey.retromusic.views.RetroShapeableImageView
                     android:id="@+id/artistImage"
                     android:layout_width="52dp"
                     android:layout_height="52dp"
                     android:layout_marginStart="16dp"
-                    android:layout_marginTop="28dp"
+                    android:layout_marginTop="16dp"
                     android:scaleType="centerCrop"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/albumCoverContainer"
                     app:retroCornerSize="26dp"
                     tools:srcCompat="@tools:sample/backgrounds/scenic[11]" />
 
-                <code.name.monkey.retromusic.views.BaselineGridTextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/albumTitle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -108,7 +104,7 @@
                     tools:ignore="MissingPrefix"
                     tools:text="@tools:sample/lorem/random" />
 
-                <code.name.monkey.retromusic.views.BaselineGridTextView
+                <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/albumText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -122,7 +118,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/artistImage"
                     app:layout_constraintTop_toBottomOf="@id/albumTitle"
-                    app:lineHeightHint="24sp"
                     tools:ignore="MissingPrefix"
                     tools:text="@tools:sample/lorem/random" />
 

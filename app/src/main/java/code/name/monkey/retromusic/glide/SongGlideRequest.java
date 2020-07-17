@@ -32,6 +32,7 @@ import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.glide.audiocover.AudioFileCover;
 import code.name.monkey.retromusic.glide.palette.BitmapPaletteTranscoder;
 import code.name.monkey.retromusic.glide.palette.BitmapPaletteWrapper;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Song;
 import code.name.monkey.retromusic.util.MusicUtil;
 import code.name.monkey.retromusic.util.PreferenceUtil;
@@ -47,32 +48,39 @@ public class SongGlideRequest {
 
     @NonNull
     private static DrawableTypeRequest createBaseRequest(@NonNull RequestManager requestManager,
-                                                         @NonNull Song song,
+                                                         @NonNull CommonData song,
                                                          boolean ignoreMediaStore) {
-        if (ignoreMediaStore) {
-            return requestManager.load(new AudioFileCover(song.getData()));
-        } else {
-            return requestManager.loadFromMediaStore(MusicUtil.getMediaStoreAlbumCoverUri(song.getAlbumId()));
+        if (song.localSong()){
+            if (ignoreMediaStore) {
+                return requestManager.load(new AudioFileCover(song.getLocalSong().getData()));
+            } else {
+                return requestManager.loadFromMediaStore(MusicUtil.getMediaStoreAlbumCoverUri(song.getLocalSong().getAlbumId()));
+            }
+        }else if (song.cloudSong()){
+            return requestManager.load(song.getCloudSong().getArtworkBigUrl());
         }
+        else return requestManager.load("");
     }
 
     @NonNull
-    private static Key createSignature(@NonNull Song song) {
-        return new MediaStoreSignature("", song.getDateModified(), 0);
+    private static Key createSignature(@NonNull CommonData song) {
+        if (song.localSong()){
+            return new MediaStoreSignature("", song.getLocalSong().getDateModified(), 0);
+        }else return new MediaStoreSignature("", 0, 0);
     }
 
     public static class Builder {
         final RequestManager requestManager;
-        final Song song;
+        final CommonData song;
         boolean ignoreMediaStore;
 
-        private Builder(@NonNull RequestManager requestManager, Song song) {
+        private Builder(@NonNull RequestManager requestManager, CommonData song) {
             this.requestManager = requestManager;
             this.song = song;
         }
 
         @NonNull
-        public static Builder from(@NonNull RequestManager requestManager, Song song) {
+        public static Builder from(@NonNull RequestManager requestManager, CommonData song) {
             return new Builder(requestManager, song);
         }
 
@@ -88,7 +96,7 @@ public class SongGlideRequest {
 
         @NonNull
         public Builder checkIgnoreMediaStore(@NonNull Context context) {
-            return ignoreMediaStore(PreferenceUtil.INSTANCE.isIgnoreMediaStoreArtwork());
+            return ignoreMediaStore(PreferenceUtil.getInstance(context).ignoreMediaStoreArtwork());
         }
 
         @NonNull
@@ -111,7 +119,7 @@ public class SongGlideRequest {
     public static class BitmapBuilder {
         private final Builder builder;
 
-        BitmapBuilder(Builder builder) {
+        public BitmapBuilder(Builder builder) {
             this.builder = builder;
         }
 
@@ -130,7 +138,7 @@ public class SongGlideRequest {
         final Context context;
         private final Builder builder;
 
-        PaletteBuilder(Builder builder, Context context) {
+        public PaletteBuilder(Builder builder, Context context) {
             this.builder = builder;
             this.context = context;
         }

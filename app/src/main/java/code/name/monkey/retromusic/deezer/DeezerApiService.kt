@@ -37,9 +37,10 @@ interface DeezerApiService {
 
         fun createDefaultOkHttpClient(
             context: Context
-        ): OkHttpClient.Builder = OkHttpClient.Builder()
-            .cache(createDefaultCache(context))
-            .addInterceptor(createCacheControlInterceptor())
+        ): OkHttpClient.Builder =
+            OkHttpClient.Builder()
+                .cache(createDefaultCache(context))
+                .addInterceptor(createCacheControlInterceptor())
 
         private fun createDefaultCache(
             context: Context

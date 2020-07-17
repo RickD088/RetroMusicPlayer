@@ -28,14 +28,13 @@ class TopTracksShortcutType(context: Context) : BaseShortcutType(context) {
     override val shortcutInfo: ShortcutInfo
         get() = ShortcutInfo.Builder(
             context, id
-        ).setShortLabel(context.getString(R.string.app_shortcut_top_tracks_short)).setLongLabel(
-            context.getString(R.string.app_shortcut_top_tracks_long)
+        ).setShortLabel(context.getString(R.string.favorites)).setLongLabel(
+            "${context.getString(R.string.action_play)} ${context.getString(R.string.favorites)}"
         ).setIcon(
             AppShortcutIconGenerator.generateThemedIcon(
-                context, R.drawable.ic_app_shortcut_top_tracks
+                context, R.drawable.ic_app_shortcut_favorite
             )
-        ).setIntent(getPlaySongsIntent(AppShortcutLauncherActivity.SHORTCUT_TYPE_TOP_TRACKS))
-            .build()
+        ).setIntent(getPlaySongsIntent(AppShortcutLauncherActivity.SHORTCUT_TYPE_TOP_TRACKS)).build()
 
     companion object {
 

@@ -1,7 +1,6 @@
 package code.name.monkey.retromusic.fragments.player.full
 
 import android.app.ActivityOptions
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -21,11 +20,11 @@ import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.loaders.ArtistLoader
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.model.lyrics.AbsSynchronizedLyrics
 import code.name.monkey.retromusic.model.lyrics.Lyrics
 import code.name.monkey.retromusic.util.NavigationUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_full.*
 import kotlinx.coroutines.CoroutineScope
@@ -66,11 +65,11 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
             lyricsLine2.visibility = View.VISIBLE
 
             lyricsLine2.measure(
-                View.MeasureSpec.makeMeasureSpec(
-                    lyricsLine2.measuredWidth,
-                    View.MeasureSpec.EXACTLY
-                ),
-                View.MeasureSpec.UNSPECIFIED
+                    View.MeasureSpec.makeMeasureSpec(
+                            lyricsLine2.measuredWidth,
+                            View.MeasureSpec.EXACTLY
+                    ),
+                    View.MeasureSpec.UNSPECIFIED
             )
             val h: Float = lyricsLine2.measuredHeight.toFloat()
 
@@ -94,12 +93,12 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
 
     private fun hideLyricsLayout() {
         lyricsLayout.animate().alpha(0f).setDuration(VISIBILITY_ANIM_DURATION)
-            .withEndAction(Runnable {
-                if (!isLyricsLayoutBound()) return@Runnable
-                lyricsLayout.visibility = View.GONE
-                lyricsLine1.text = null
-                lyricsLine2.text = null
-            })
+                .withEndAction(Runnable {
+                    if (!isLyricsLayoutBound()) return@Runnable
+                    lyricsLayout.visibility = View.GONE
+                    lyricsLine1.text = null
+                    lyricsLine2.text = null
+                })
     }
 
     override fun setLyrics(l: Lyrics?) {
@@ -126,7 +125,7 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
     private var lastColor: Int = 0
     override val paletteColor: Int
         get() = lastColor
-    private lateinit var controlsFragment: FullPlaybackControlsFragment
+    private lateinit var fullPlaybackControlsFragment: FullPlaybackControlsFragment
 
     private fun setUpPlayerToolbar() {
         playerToolbar.apply {
@@ -135,15 +134,15 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_full, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        lyricsLayout = view.findViewById(R.id.playerLyrics)
+        lyricsLayout = view.findViewById(R.id.player_lyrics)
         lyricsLine1 = view.findViewById(R.id.player_lyrics_line1)
         lyricsLine2 = view.findViewById(R.id.player_lyrics_line2)
 
@@ -158,28 +157,32 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
 
     private fun setupArtist() {
         artistImage.setOnClickListener {
-            val transitionName =
-                "${getString(R.string.transition_artist_image)}_${MusicPlayerRemote.currentSong.artistId}"
-            val activityOptions =
-                ActivityOptions.makeSceneTransitionAnimation(
-                    requireActivity(),
-                    artistImage,
-                    transitionName
+            //todo: 目前只有本地歌曲
+            if (MusicPlayerRemote.currentSong.localSong()) {
+                val transitionName =
+                        "${getString(R.string.transition_artist_image)}_${MusicPlayerRemote.currentSong.getLocalSong().artistId}"
+                val activityOptions =
+                        ActivityOptions.makeSceneTransitionAnimation(
+                                requireActivity(),
+                                artistImage,
+                                transitionName
+                        )
+                NavigationUtil.goToArtistOptions(
+                        requireActivity(),
+                        MusicPlayerRemote.currentSong.getLocalSong().artistId,
+                        MusicPlayerRemote.currentSong,
+                        activityOptions
                 )
-            NavigationUtil.goToArtistOptions(
-                requireActivity(),
-                MusicPlayerRemote.currentSong.artistId,
-                activityOptions
-            )
+            }
         }
     }
 
     private fun setUpSubFragments() {
-        controlsFragment =
-            childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as FullPlaybackControlsFragment
+        fullPlaybackControlsFragment =
+                childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as FullPlaybackControlsFragment
 
         val playerAlbumCoverFragment =
-            childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment
+                childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment
         playerAlbumCoverFragment.setCallbacks(this)
         playerAlbumCoverFragment.removeSlideEffect()
     }
@@ -198,22 +201,21 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
         return Color.WHITE
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        lastColor = color.backgroundColor
-        mask.backgroundTintList = ColorStateList.valueOf(color.backgroundColor)
-        controlsFragment.setColor(color)
+    override fun onColorChanged(color: Int) {
+        lastColor = color
+        fullPlaybackControlsFragment.setDark(color)
         callbacks?.onPaletteColorChanged()
         ToolbarContentTintHelper.colorizeToolbar(playerToolbar, Color.WHITE, activity)
     }
 
     override fun onFavoriteToggled() {
         toggleFavorite(MusicPlayerRemote.currentSong)
-        controlsFragment.onFavoriteToggled()
+        fullPlaybackControlsFragment.onFavoriteToggled()
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }
@@ -237,17 +239,18 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
 
     private fun updateArtistImage() {
         CoroutineScope(Dispatchers.IO).launch {
-            val artist =
-                ArtistLoader.getArtist(requireContext(), MusicPlayerRemote.currentSong.artistId)
-            withContext(Dispatchers.Main) {
-                ArtistGlideRequest.Builder.from(Glide.with(requireContext()), artist)
-                    .generatePalette(requireContext())
-                    .build()
-                    .into(object : RetroMusicColoredTarget(artistImage) {
-                        override fun onColorReady(colors: MediaNotificationProcessor) {
-
-                        }
-                    })
+            if (MusicPlayerRemote.currentSong.localSong()) {
+                val artist =
+                        ArtistLoader.getArtist(requireContext(), MusicPlayerRemote.currentSong.getLocalSong().artistId)
+                withContext(Dispatchers.Main) {
+                    ArtistGlideRequest.Builder.from(Glide.with(requireContext()), artist)
+                            .generatePalette(requireContext())
+                            .build()
+                            .into(object : RetroMusicColoredTarget(artistImage) {
+                                override fun onColorReady(color: Int) {
+                                }
+                            })
+                }
             }
         }
     }
@@ -263,7 +266,7 @@ class FullPlayerFragment : AbsPlayerFragment(), MusicProgressViewUpdateHelper.Ca
                 nextSongLabel.setText(R.string.last_song)
                 nextSong.hide()
             } else {
-                val title = MusicPlayerRemote.playingQueue[MusicPlayerRemote.position + 1].title
+                val title = MusicPlayerRemote.playingQueue[MusicPlayerRemote.position + 1].getSongTitle()
                 nextSongLabel.setText(R.string.next_song)
                 nextSong.apply {
                     text = title

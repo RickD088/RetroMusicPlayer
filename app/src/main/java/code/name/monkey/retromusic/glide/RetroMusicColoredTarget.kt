@@ -17,11 +17,11 @@ package code.name.monkey.retromusic.glide
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import code.name.monkey.appthemehelper.util.ATHUtil
-import code.name.monkey.retromusic.App
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.glide.palette.BitmapPaletteTarget
 import code.name.monkey.retromusic.glide.palette.BitmapPaletteWrapper
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
+import code.name.monkey.retromusic.util.PreferenceUtil
+import code.name.monkey.retromusic.util.RetroColorUtil
 import com.bumptech.glide.request.animation.GlideAnimation
 
 
@@ -30,15 +30,14 @@ abstract class RetroMusicColoredTarget(view: ImageView) : BitmapPaletteTarget(vi
     protected val defaultFooterColor: Int
         get() = ATHUtil.resolveColor(getView().context, R.attr.colorControlNormal)
 
-    abstract fun onColorReady(colors: MediaNotificationProcessor)
+    protected val albumArtistFooterColor: Int
+        get() = ATHUtil.resolveColor(getView().context, R.attr.colorControlNormal)
+
+    abstract fun onColorReady(color: Int)
 
     override fun onLoadFailed(e: Exception?, errorDrawable: Drawable?) {
         super.onLoadFailed(e, errorDrawable)
-        val colors = MediaNotificationProcessor(App.getContext(), errorDrawable)
-        onColorReady(colors)
-        /* MediaNotificationProcessor(App.getContext()).getPaletteAsync({
-            onColorReady(it)
-        }, errorDrawable)*/
+        onColorReady(defaultFooterColor)
     }
 
     override fun onResourceReady(
@@ -46,10 +45,15 @@ abstract class RetroMusicColoredTarget(view: ImageView) : BitmapPaletteTarget(vi
         glideAnimation: GlideAnimation<in BitmapPaletteWrapper>?
     ) {
         super.onResourceReady(resource, glideAnimation)
-        resource?.let { bitmapWrap ->
-            MediaNotificationProcessor(App.getContext()).getPaletteAsync({
-                onColorReady(it)
-            }, bitmapWrap.bitmap)
+        val defaultColor = defaultFooterColor
+
+        resource?.let {
+            onColorReady(
+                if (PreferenceUtil.getInstance(getView().context).isDominantColor)
+                    RetroColorUtil.getDominantColor(it.bitmap, defaultColor)
+                else
+                    RetroColorUtil.getColor(it.palette, defaultColor)
+            )
         }
     }
 }

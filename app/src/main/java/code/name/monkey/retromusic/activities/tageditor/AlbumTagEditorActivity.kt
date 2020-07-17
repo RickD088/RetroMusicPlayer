@@ -48,7 +48,7 @@ class AlbumTagEditorActivity : AbsTagEditorActivity(), TextWatcher {
 
         Glide.with(this@AlbumTagEditorActivity).load(selectedFileUri).asBitmap()
             .transcode(BitmapPaletteTranscoder(this), BitmapPaletteWrapper::class.java)
-            .diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false)
             .into(object : SimpleTarget<BitmapPaletteWrapper>() {
                 override fun onResourceReady(
                     resource: BitmapPaletteWrapper?,
@@ -91,7 +91,7 @@ class AlbumTagEditorActivity : AbsTagEditorActivity(), TextWatcher {
         setDrawUnderStatusBar()
         super.onCreate(savedInstanceState)
         window.sharedElementsUseOverlay = true
-        imageContainer?.transitionName = getString(R.string.transition_album_art)
+        imageContainer?.transitionName = "${getString(R.string.transition_album_art)}_$id"
         windowEnterTransition()
         setUpViews()
         setupToolbar()
@@ -162,7 +162,7 @@ class AlbumTagEditorActivity : AbsTagEditorActivity(), TextWatcher {
 
         writeValuesToFiles(
             fieldKeyValueMap,
-            if (deleteAlbumArt) AbsTagEditorActivity.ArtworkInfo(id, null)
+            if (deleteAlbumArt) ArtworkInfo(id, null)
             else if (albumArtBitmap == null) null else ArtworkInfo(id, albumArtBitmap!!)
         )
     }

@@ -23,13 +23,14 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import code.name.monkey.appthemehelper.util.ATHUtil.resolveColor
+import code.name.monkey.appthemehelper.util.ATHUtil
 import code.name.monkey.appthemehelper.util.ColorUtil
 import code.name.monkey.appthemehelper.util.MaterialValueHelper
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.MainActivity
 import code.name.monkey.retromusic.glide.SongGlideRequest
 import code.name.monkey.retromusic.glide.palette.BitmapPaletteWrapper
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.service.MusicService.*
@@ -49,17 +50,28 @@ class PlayingNotificationOreo : PlayingNotification() {
 
     private var target: Target<BitmapPaletteWrapper>? = null
 
-    private fun getCombinedRemoteViews(collapsed: Boolean, song: Song): RemoteViews {
+    private fun getCombinedRemoteViews(collapsed: Boolean, data: CommonData): RemoteViews {
         val remoteViews = RemoteViews(
             service.packageName,
             if (collapsed) R.layout.layout_notification_collapsed else R.layout.layout_notification_expanded
         )
-        remoteViews.setTextViewText(
-            R.id.appName,
-            service.getString(R.string.app_name) + " • " + song.albumName
-        )
-        remoteViews.setTextViewText(R.id.title, song.title)
-        remoteViews.setTextViewText(R.id.subtitle, song.artistName)
+        if (data.localSong()) {
+            val song = data.getLocalSong()
+            remoteViews.setTextViewText(
+                R.id.appName,
+                service.getString(R.string.app_name) + " • " + song.albumName
+            )
+            remoteViews.setTextViewText(R.id.title, song.title)
+            remoteViews.setTextViewText(R.id.subtitle, song.artistName)
+        } else if (data.cloudSong()) {
+            val song = data.getCloudSong()
+            remoteViews.setTextViewText(
+                R.id.appName,
+                song.title
+            )
+            remoteViews.setTextViewText(R.id.title, song.songName)
+            remoteViews.setTextViewText(R.id.subtitle, song.singerName)
+        }
         linkButtons(remoteViews)
         return remoteViews
     }
@@ -109,21 +121,18 @@ class PlayingNotificationOreo : PlayingNotification() {
                         resource: BitmapPaletteWrapper,
                         glideAnimation: GlideAnimation<in BitmapPaletteWrapper>
                     ) {
-                        /* val mediaNotificationProcessor = MediaNotificationProcessor(
-                             service,
-                             service
-                         ) { i, _ -> update(resource.bitmap, i) }
-                         mediaNotificationProcessor.processNotification(resource.bitmap)*/
-
-                        val colors = MediaNotificationProcessor(service, resource.bitmap)
-                        update(resource.bitmap, colors.backgroundColor)
+                        val mediaNotificationProcessor = MediaNotificationProcessor(
+                            service,
+                            service
+                        ) { i, _ -> update(resource.bitmap, i) }
+                        mediaNotificationProcessor.processNotification(resource.bitmap)
                     }
 
                     override fun onLoadFailed(e: Exception?, errorDrawable: Drawable?) {
                         super.onLoadFailed(e, errorDrawable)
                         update(
                             null,
-                            resolveColor(service, R.attr.colorSurface, Color.WHITE)
+                            ATHUtil.resolveColor(service, R.attr.colorSurface, Color.WHITE)
                         )
                     }
 
@@ -143,8 +152,9 @@ class PlayingNotificationOreo : PlayingNotification() {
                             )
                         }
 
-                        if (!PreferenceUtil.isColoredNotification) {
-                            bgColorFinal = resolveColor(service, R.attr.colorPrimary, Color.WHITE)
+                        if (!PreferenceUtil.getInstance(service).coloredNotification()) {
+                            bgColorFinal =
+                                ATHUtil.resolveColor(service, R.attr.colorPrimary, Color.WHITE)
                         }
                         setBackgroundColor(bgColorFinal)
                         setNotificationContent(ColorUtil.isColorLight(bgColorFinal))

@@ -25,10 +25,12 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.dialogs.AddToPlaylistDialog
 import code.name.monkey.retromusic.dialogs.DeletePlaylistDialog
 import code.name.monkey.retromusic.dialogs.RenamePlaylistDialog
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.loaders.PlaylistSongsLoader
 import code.name.monkey.retromusic.misc.WeakContextAsyncTask
 import code.name.monkey.retromusic.model.AbsCustomPlaylist
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Playlist
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.PlaylistsUtil
@@ -80,7 +82,7 @@ object PlaylistMenuHelper {
     private fun getPlaylistSongs(
         activity: Activity,
         playlist: Playlist
-    ): ArrayList<Song> {
+    ): ArrayList<CommonData> {
         return if (playlist is AbsCustomPlaylist) {
             playlist.getSongs(activity)
         } else {

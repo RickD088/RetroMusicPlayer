@@ -16,11 +16,10 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.ViewUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import code.name.monkey.retromusic.views.DrawableGradient
 import kotlinx.android.synthetic.main.fragment_flat_player.*
 
@@ -30,13 +29,13 @@ class FlatPlayerFragment : AbsPlayerFragment() {
     }
 
     private var valueAnimator: ValueAnimator? = null
-    private lateinit var controlsFragment: FlatPlaybackControlsFragment
+    private lateinit var flatPlaybackControlsFragment: FlatPlaybackControlsFragment
     private var lastColor: Int = 0
     override val paletteColor: Int
         get() = lastColor
 
     private fun setUpSubFragments() {
-        controlsFragment =
+        flatPlaybackControlsFragment =
             childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as FlatPlaybackControlsFragment
         val playerAlbumCoverFragment =
             childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment
@@ -56,11 +55,11 @@ class FlatPlayerFragment : AbsPlayerFragment() {
 
     private fun colorize(i: Int) {
         if (valueAnimator != null) {
-            valueAnimator?.cancel()
+            valueAnimator!!.cancel()
         }
 
         valueAnimator = ValueAnimator.ofObject(ArgbEvaluator(), android.R.color.transparent, i)
-        valueAnimator?.addUpdateListener { animation ->
+        valueAnimator!!.addUpdateListener { animation ->
             val drawable = DrawableGradient(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(animation.animatedValue as Int, android.R.color.transparent), 0
@@ -68,7 +67,7 @@ class FlatPlayerFragment : AbsPlayerFragment() {
             colorGradientBackground?.background = drawable
 
         }
-        valueAnimator?.setDuration(ViewUtil.RETRO_MUSIC_ANIM_TIME.toLong())?.start()
+        valueAnimator!!.setDuration(ViewUtil.RETRO_MUSIC_ANIM_TIME.toLong()).start()
     }
 
     override fun onCreateView(
@@ -85,11 +84,11 @@ class FlatPlayerFragment : AbsPlayerFragment() {
     }
 
     override fun onShow() {
-        controlsFragment.show()
+        flatPlaybackControlsFragment.show()
     }
 
     override fun onHide() {
-        controlsFragment.hide()
+        flatPlaybackControlsFragment.hide()
         onBackPressed()
     }
 
@@ -99,24 +98,24 @@ class FlatPlayerFragment : AbsPlayerFragment() {
 
     override fun toolbarIconColor(): Int {
         val isLight = ColorUtil.isColorLight(paletteColor)
-        return if (PreferenceUtil.isAdaptiveColor)
+        return if (PreferenceUtil.getInstance(requireContext()).adaptiveColor)
             MaterialValueHelper.getPrimaryTextColor(requireContext(), isLight)
         else
             ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        lastColor = color.backgroundColor
-        controlsFragment.setColor(color)
+    override fun onColorChanged(color: Int) {
+        lastColor = color
+        flatPlaybackControlsFragment.setDark(color)
         callbacks?.onPaletteColorChanged()
-        val isLight = ColorUtil.isColorLight(color.backgroundColor)
-        val iconColor = if (PreferenceUtil.isAdaptiveColor)
+        val isLight = ColorUtil.isColorLight(color)
+        val iconColor = if (PreferenceUtil.getInstance(requireContext()).adaptiveColor)
             MaterialValueHelper.getPrimaryTextColor(requireContext(), isLight)
         else
             ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
         ToolbarContentTintHelper.colorizeToolbar(playerToolbar, iconColor, requireActivity())
-        if (PreferenceUtil.isAdaptiveColor) {
-            colorize(color.backgroundColor)
+        if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            colorize(color)
         }
     }
 
@@ -124,9 +123,9 @@ class FlatPlayerFragment : AbsPlayerFragment() {
         toggleFavorite(MusicPlayerRemote.currentSong)
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }

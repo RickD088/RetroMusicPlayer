@@ -9,25 +9,19 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.AlbumCoverStyle
-import code.name.monkey.retromusic.fragments.NowPlayingScreen.*
 import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.glide.SongGlideRequest
 import code.name.monkey.retromusic.misc.CustomFragmentStatePagerAdapter
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.MusicUtil
 import code.name.monkey.retromusic.util.NavigationUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import com.bumptech.glide.Glide
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import java.util.*
 
 class AlbumCoverPagerAdapter(
     fragmentManager: FragmentManager,
-    private val dataSet: List<Song>
+    private val dataSet: ArrayList<CommonData>
 ) : CustomFragmentStatePagerAdapter(fragmentManager) {
 
     private var currentColorReceiver: AlbumCoverFragment.ColorReceiver? = null
@@ -70,10 +64,24 @@ class AlbumCoverPagerAdapter(
 
         lateinit var albumCover: ImageView
         private var isColorReady: Boolean = false
-        private lateinit var color: MediaNotificationProcessor
-        private lateinit var song: Song
+        private var color: Int = 0
+        private lateinit var song: CommonData
         private var colorReceiver: ColorReceiver? = null
         private var request: Int = 0
+
+        private val layout: Int
+            get() {
+                return when (PreferenceUtil.getInstance(requireContext()).albumCoverStyle) {
+                    AlbumCoverStyle.NORMAL -> R.layout.fragment_album_cover
+                    AlbumCoverStyle.FLAT -> R.layout.fragment_album_flat_cover
+                    AlbumCoverStyle.CIRCLE -> R.layout.fragment_album_circle_cover
+                    AlbumCoverStyle.CARD -> R.layout.fragment_album_card_cover
+                    AlbumCoverStyle.MATERIAL -> R.layout.fragment_album_material_cover
+                    AlbumCoverStyle.FULL -> R.layout.fragment_album_full_cover
+                    AlbumCoverStyle.FULL_CARD -> R.layout.fragment_album_full_card_cover
+                    else -> R.layout.fragment_album_cover
+                }
+            }
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
@@ -87,52 +95,16 @@ class AlbumCoverPagerAdapter(
             container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View? {
-            val view = inflater.inflate(getLayoutWithPlayerTheme(), container, false)
+            val finalLayout = when {
+                PreferenceUtil.getInstance(requireContext()).carouselEffect() -> R.layout.fragment_album_carousel_cover
+                else -> layout
+            }
+            val view = inflater.inflate(finalLayout, container, false)
             albumCover = view.findViewById(R.id.player_image)
             albumCover.setOnClickListener {
-                showLyricsDialog()
+                NavigationUtil.goToLyrics(requireActivity())
             }
             return view
-        }
-
-        private fun showLyricsDialog() {
-            GlobalScope.launch(Dispatchers.IO) {
-                val data = MusicUtil.getLyrics(song)
-                withContext(Dispatchers.Main) {
-                    MaterialAlertDialogBuilder(
-                        requireContext(),
-                        R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-                    ).apply {
-                        setTitle(song.title)
-                        setMessage(data)
-                        setNegativeButton(R.string.synced_lyrics) { _, _ ->
-                            NavigationUtil.goToLyrics(requireActivity())
-                        }
-                        show()
-                    }
-                }
-            }
-        }
-
-        private fun getLayoutWithPlayerTheme(): Int {
-            return when (PreferenceUtil.nowPlayingScreen) {
-                Card, Fit, Tiny, Classic, Peak, Gradient, Full -> R.layout.fragment_album_full_cover
-                else -> {
-                    if (PreferenceUtil.isCarouselEffect) {
-                        R.layout.fragment_album_carousel_cover
-                    } else {
-                        when (PreferenceUtil.albumCoverStyle) {
-                            AlbumCoverStyle.Normal -> R.layout.fragment_album_cover
-                            AlbumCoverStyle.Flat -> R.layout.fragment_album_flat_cover
-                            AlbumCoverStyle.Circle -> R.layout.fragment_album_circle_cover
-                            AlbumCoverStyle.Card -> R.layout.fragment_album_card_cover
-                            AlbumCoverStyle.Material -> R.layout.fragment_album_material_cover
-                            AlbumCoverStyle.Full -> R.layout.fragment_album_full_cover
-                            AlbumCoverStyle.FullCard -> R.layout.fragment_album_full_card_cover
-                        }
-                    }
-                }
-            }
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -150,13 +122,13 @@ class AlbumCoverPagerAdapter(
                 .checkIgnoreMediaStore(requireContext())
                 .generatePalette(requireContext()).build()
                 .into(object : RetroMusicColoredTarget(albumCover) {
-                    override fun onColorReady(colors: MediaNotificationProcessor) {
-                        setColor(colors)
+                    override fun onColorReady(color: Int) {
+                        setColor(color)
                     }
                 })
         }
 
-        private fun setColor(color: MediaNotificationProcessor) {
+        private fun setColor(color: Int) {
             this.color = color
             isColorReady = true
             if (colorReceiver != null) {
@@ -175,14 +147,14 @@ class AlbumCoverPagerAdapter(
         }
 
         interface ColorReceiver {
-            fun onColorReady(color: MediaNotificationProcessor, request: Int)
+            fun onColorReady(color: Int, request: Int)
         }
 
         companion object {
 
             private const val SONG_ARG = "song"
 
-            fun newInstance(song: Song): AlbumCoverFragment {
+            fun newInstance(song: CommonData): AlbumCoverFragment {
                 val frag = AlbumCoverFragment()
                 val args = Bundle()
                 args.putParcelable(SONG_ARG, song)

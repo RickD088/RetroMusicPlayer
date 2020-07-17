@@ -17,7 +17,7 @@ package code.name.monkey.retromusic.fragments.settings
 import android.os.Bundle
 import android.view.View
 import androidx.preference.Preference
-import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEListPreference
+
 import code.name.monkey.retromusic.R
 
 /**
@@ -26,11 +26,7 @@ import code.name.monkey.retromusic.R
 
 class OtherSettingsFragment : AbsSettingsFragment() {
     override fun invalidateSettings() {
-        val languagePreference: ATEListPreference? = findPreference("language_name")
-        languagePreference?.setOnPreferenceChangeListener { _, _ ->
-            requireActivity().recreate()
-            return@setOnPreferenceChangeListener true
-        }
+
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -39,15 +35,7 @@ class OtherSettingsFragment : AbsSettingsFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val preference: Preference? = findPreference("last_added_interval")
-        preference?.setOnPreferenceChangeListener { lastAdded, newValue ->
-            setSummary(lastAdded, newValue)
-            true
-        }
-        val languagePreference: Preference? = findPreference("language_name")
-        languagePreference?.setOnPreferenceChangeListener { prefs, newValue ->
-            setSummary(prefs, newValue)
-            true
-        }
+        val preference: Preference = findPreference("last_added_interval")!!
+        setSummary(preference)
     }
 }

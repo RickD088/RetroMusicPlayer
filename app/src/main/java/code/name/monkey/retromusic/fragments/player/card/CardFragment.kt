@@ -12,8 +12,8 @@ import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.fragments.player.normal.PlayerFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_card_player.*
 
 class CardFragment : AbsPlayerFragment() {
@@ -44,16 +44,17 @@ class CardFragment : AbsPlayerFragment() {
         return Color.WHITE
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        playbackControlsFragment.setColor(color)
-        lastColor = color.primaryTextColor
-        callbacks?.onPaletteColorChanged()
+    override fun onColorChanged(color: Int) {
+        playbackControlsFragment.setDark(color)
+        lastColor = color
+        callbacks!!.onPaletteColorChanged()
+
         ToolbarContentTintHelper.colorizeToolbar(playerToolbar, Color.WHITE, activity)
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }

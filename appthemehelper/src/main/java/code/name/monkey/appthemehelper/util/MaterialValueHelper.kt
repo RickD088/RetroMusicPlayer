@@ -10,7 +10,6 @@ import code.name.monkey.appthemehelper.R
 object MaterialValueHelper {
 
     @SuppressLint("PrivateResource")
-    @JvmStatic
     @ColorInt
     fun getPrimaryTextColor(context: Context?, dark: Boolean): Int {
         return if (dark) {
@@ -19,7 +18,6 @@ object MaterialValueHelper {
     }
 
     @SuppressLint("PrivateResource")
-    @JvmStatic
     @ColorInt
     fun getSecondaryTextColor(context: Context?, dark: Boolean): Int {
         return if (dark) {
@@ -28,7 +26,6 @@ object MaterialValueHelper {
     }
 
     @SuppressLint("PrivateResource")
-    @JvmStatic
     @ColorInt
     fun getPrimaryDisabledTextColor(context: Context?, dark: Boolean): Int {
         return if (dark) {
@@ -37,7 +34,6 @@ object MaterialValueHelper {
     }
 
     @SuppressLint("PrivateResource")
-    @JvmStatic
     @ColorInt
     fun getSecondaryDisabledTextColor(context: Context?, dark: Boolean): Int {
         return if (dark) {

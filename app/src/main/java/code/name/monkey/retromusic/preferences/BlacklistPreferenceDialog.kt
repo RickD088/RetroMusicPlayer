@@ -22,12 +22,17 @@ import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat.SRC_IN
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEDialogPreference
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.dialogs.BlacklistFolderChooserDialog
 import code.name.monkey.retromusic.extensions.colorControlNormal
 import code.name.monkey.retromusic.providers.BlacklistStore
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import code.name.monkey.retromusic.util.PreferenceUtil
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.list.listItems
 import java.io.File
 import java.util.*
 
@@ -41,7 +46,7 @@ class BlacklistPreference @JvmOverloads constructor(
     init {
         icon?.colorFilter =
             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                context.colorControlNormal(),
+                colorControlNormal(context),
                 SRC_IN
             )
     }
@@ -55,76 +60,81 @@ class BlacklistPreferenceDialog : DialogFragment(), BlacklistFolderChooserDialog
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val chooserDialog =
+        val blacklistFolderChooserDialog =
             childFragmentManager.findFragmentByTag("FOLDER_CHOOSER") as BlacklistFolderChooserDialog?
-        chooserDialog?.setCallback(this)
+        blacklistFolderChooserDialog?.setCallback(this)
         refreshBlacklistData()
-        return MaterialAlertDialogBuilder(
-            requireActivity(),
-            R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-        )
-            .setTitle(R.string.blacklist)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                dismiss()
+        return MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            title(code.name.monkey.retromusic.R.string.blacklist)
+            cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+            positiveButton(android.R.string.ok) {
+                dismissDialog()
             }
-            .setNeutralButton(R.string.clear_action) { _, _ ->
-                MaterialAlertDialogBuilder(
-                    requireActivity(),
-                    R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-                )
-                    .setTitle(R.string.clear_blacklist)
-                    .setMessage(R.string.do_you_want_to_clear_the_blacklist)
-                    .setPositiveButton(R.string.clear_action) { _, _ ->
-                        BlacklistStore.getInstance(
-                            requireContext()
-                        ).clear()
+            neutralButton(text = getString(R.string.clear_action)) {
+                MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                    title(code.name.monkey.retromusic.R.string.clear_blacklist)
+                    message(code.name.monkey.retromusic.R.string.do_you_want_to_clear_the_blacklist)
+                    cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+                    positiveButton(code.name.monkey.retromusic.R.string.clear_action) {
+                        BlacklistStore.getInstance(context).clear()
+                        refreshBlacklistData()
                     }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
+                    negativeButton(android.R.string.cancel)
+                }
             }
-            .setNegativeButton(R.string.add_action) { _, _ ->
+            negativeButton(R.string.add_action) {
                 val dialog = BlacklistFolderChooserDialog.create()
                 dialog.setCallback(this@BlacklistPreferenceDialog)
-                dialog.show(requireActivity().supportFragmentManager, "FOLDER_CHOOSER")
+                dialog.show(childFragmentManager, "FOLDER_CHOOSER")
             }
-            .setItems(paths.toTypedArray()) { _, which ->
-                MaterialAlertDialogBuilder(
-                    requireActivity(),
-                    R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-                )
-                    .setTitle(R.string.remove_from_blacklist)
-                    .setMessage(
-                        HtmlCompat.fromHtml(
-                            String.format(
-                                getString(
-                                    R.string.do_you_want_to_remove_from_the_blacklist
-                                ),
-                                paths[which]
+            listItems(items = paths, waitForPositiveButton = false) { _, _, text ->
+                MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                    cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
+                    title(code.name.monkey.retromusic.R.string.remove_from_blacklist)
+                    message(
+                        text = HtmlCompat.fromHtml(
+                            getString(
+                                code.name.monkey.retromusic.R.string.do_you_want_to_remove_from_the_blacklist,
+                                text
                             ),
                             HtmlCompat.FROM_HTML_MODE_LEGACY
                         )
                     )
-                    .setPositiveButton(R.string.remove_action) { _, _ ->
-                        BlacklistStore.getInstance(requireContext())
-                            .removePath(File(paths[which]))
+                    positiveButton(code.name.monkey.retromusic.R.string.remove_action) {
+                        BlacklistStore.getInstance(context).removePath(File(text.toString()))
                         refreshBlacklistData()
                     }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
+                    negativeButton(android.R.string.cancel)
+                }
             }
-            .create()
+            noAutoDismiss()
+        }
+    }
+
+    override fun show(manager: FragmentManager, tag: String?) {
+        try {
+            super.show(manager, tag)
+        } catch (ignore: IllegalStateException) {
+            ignore.printStackTrace()
+        }
+    }
+
+    private fun dismissDialog() {
+        if (activity != null && !requireActivity().isFinishing) {
+            dismissAllowingStateLoss()
+        }
     }
 
     private lateinit var paths: ArrayList<String>
 
     private fun refreshBlacklistData() {
-        this.paths = BlacklistStore.getInstance(requireContext()).paths
-        val dialog = dialog as MaterialAlertDialogBuilder?
-        dialog?.setItems(paths.toTypedArray(), null)
+        this.paths = BlacklistStore.getInstance(context!!).paths
+        val dialog = dialog as MaterialDialog?
+        dialog?.listItems(items = paths)
     }
 
     override fun onFolderSelection(dialog: BlacklistFolderChooserDialog, folder: File) {
-        BlacklistStore.getInstance(requireContext()).addPath(folder)
+        BlacklistStore.getInstance(context!!).addPath(folder)
         refreshBlacklistData()
     }
 }

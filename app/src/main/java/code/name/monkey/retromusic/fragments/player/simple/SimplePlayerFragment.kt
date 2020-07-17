@@ -11,8 +11,8 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_simple_player.*
 
 /**
@@ -29,7 +29,7 @@ class SimplePlayerFragment : AbsPlayerFragment() {
     override val paletteColor: Int
         get() = lastColor
 
-    private lateinit var controlsFragment: SimplePlaybackControlsFragment
+    private lateinit var simplePlaybackControlsFragment: SimplePlaybackControlsFragment
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,16 +49,16 @@ class SimplePlayerFragment : AbsPlayerFragment() {
         val playerAlbumCoverFragment =
             childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment
         playerAlbumCoverFragment.setCallbacks(this)
-        controlsFragment =
+        simplePlaybackControlsFragment =
             childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as SimplePlaybackControlsFragment
     }
 
     override fun onShow() {
-        controlsFragment.show()
+        simplePlaybackControlsFragment.show()
     }
 
     override fun onHide() {
-        controlsFragment.hide()
+        simplePlaybackControlsFragment.hide()
     }
 
     override fun onBackPressed(): Boolean {
@@ -69,10 +69,10 @@ class SimplePlayerFragment : AbsPlayerFragment() {
         return ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        lastColor = color.backgroundColor
+    override fun onColorChanged(color: Int) {
+        lastColor = color
         callbacks?.onPaletteColorChanged()
-        controlsFragment.setColor(color)
+        simplePlaybackControlsFragment.setDark(color)
         ToolbarContentTintHelper.colorizeToolbar(
             playerToolbar,
             ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal),
@@ -84,9 +84,9 @@ class SimplePlayerFragment : AbsPlayerFragment() {
         toggleFavorite(MusicPlayerRemote.currentSong)
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }

@@ -2,6 +2,7 @@ package code.name.monkey.retromusic.fragments
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.text.SpannableString
@@ -11,18 +12,15 @@ import android.view.*
 import android.view.animation.DecelerateInterpolator
 import code.name.monkey.appthemehelper.ThemeStore
 import code.name.monkey.retromusic.R
-import code.name.monkey.retromusic.extensions.show
 import code.name.monkey.retromusic.extensions.textColorPrimary
 import code.name.monkey.retromusic.extensions.textColorSecondary
 import code.name.monkey.retromusic.fragments.base.AbsMusicServiceFragment
-import code.name.monkey.retromusic.glide.SongGlideRequest
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.RetroUtil
 import code.name.monkey.retromusic.util.ViewUtil
-import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.fragment_mini_player.*
 import kotlin.math.abs
 
@@ -46,27 +44,26 @@ open class MiniPlayerFragment : AbsMusicServiceFragment(), MusicProgressViewUpda
 
     override fun onClick(view: View) {
         when (view.id) {
-            R.id.actionNext -> MusicPlayerRemote.playNextSong()
-            R.id.actionPrevious -> MusicPlayerRemote.back()
+            R.id.actionNext -> MusicPlayerRemote.playNextSong(activity)
+            R.id.actionPrevious -> MusicPlayerRemote.back(activity)
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.setOnTouchListener(FlingPlayBackController(requireContext()))
+        view.setOnTouchListener(FlingPlayBackController(requireActivity()))
         setUpMiniPlayer()
 
         if (RetroUtil.isTablet()) {
-            actionNext.show()
-            actionPrevious.show()
-            actionNext?.show()
-            actionPrevious?.show()
-
+            actionNext.visibility = View.VISIBLE
+            actionPrevious.visibility = View.VISIBLE
+            actionNext?.visibility = View.VISIBLE
+            actionPrevious?.visibility = View.VISIBLE
         } else {
             actionNext.visibility =
-                if (PreferenceUtil.isExtraControls) View.VISIBLE else View.GONE
+                if (PreferenceUtil.getInstance(requireContext()).isExtraControls) View.VISIBLE else View.GONE
             actionPrevious.visibility =
-                if (PreferenceUtil.isExtraControls) View.VISIBLE else View.GONE
+                if (PreferenceUtil.getInstance(requireContext()).isExtraControls) View.VISIBLE else View.GONE
         }
         actionNext.setOnClickListener(this)
         actionPrevious.setOnClickListener(this)
@@ -87,29 +84,16 @@ open class MiniPlayerFragment : AbsMusicServiceFragment(), MusicProgressViewUpda
         val builder = SpannableStringBuilder()
 
         val song = MusicPlayerRemote.currentSong
-        val title = SpannableString(song.title)
-        title.setSpan(ForegroundColorSpan(textColorPrimary()), 0, title.length, 0)
+        val title = SpannableString(if (song.getSongTitle().isNullOrBlank()) "" else song.getSongTitle())
+        title.setSpan(ForegroundColorSpan(textColorPrimary(requireContext())), 0, title.length, 0)
 
-        val text = SpannableString(song.artistName)
-        text.setSpan(ForegroundColorSpan(textColorSecondary()), 0, text.length, 0)
+        val text = SpannableString(if (song.getSongSinger().isNullOrBlank()) "" else song.getSongSinger())
+        text.setSpan(ForegroundColorSpan(textColorSecondary(requireContext())), 0, text.length, 0)
 
         builder.append(title).append(" • ").append(text)
 
         miniPlayerTitle.isSelected = true
         miniPlayerTitle.text = builder
-
-        if (RetroUtil.isTablet()) {
-            image?.let {
-                SongGlideRequest.Builder.from(
-                    Glide.with(requireContext()),
-                    MusicPlayerRemote.currentSong
-                ).checkIgnoreMediaStore(requireContext())
-                    .ignoreMediaStore(PreferenceUtil.isAllowedToDownloadMetadata())
-                    .asBitmap()
-                    .build()
-                    .into(it)
-            }
-        }
     }
 
     override fun onServiceConnected() {
@@ -151,12 +135,12 @@ open class MiniPlayerFragment : AbsMusicServiceFragment(), MusicProgressViewUpda
         }
     }
 
-    class FlingPlayBackController(context: Context) : View.OnTouchListener {
+    class FlingPlayBackController(activity: Activity) : View.OnTouchListener {
 
         private var flingPlayBackController: GestureDetector
 
         init {
-            flingPlayBackController = GestureDetector(context,
+            flingPlayBackController = GestureDetector(activity,
                 object : GestureDetector.SimpleOnGestureListener() {
                     override fun onFling(
                         e1: MotionEvent, e2: MotionEvent, velocityX: Float,
@@ -164,10 +148,10 @@ open class MiniPlayerFragment : AbsMusicServiceFragment(), MusicProgressViewUpda
                     ): Boolean {
                         if (abs(velocityX) > abs(velocityY)) {
                             if (velocityX < 0) {
-                                MusicPlayerRemote.playNextSong()
+                                MusicPlayerRemote.playNextSong(activity)
                                 return true
                             } else if (velocityX > 0) {
-                                MusicPlayerRemote.playPreviousSong()
+                                MusicPlayerRemote.playPreviousSong(activity)
                                 return true
                             }
                         }

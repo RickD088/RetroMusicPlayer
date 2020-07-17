@@ -26,9 +26,7 @@ import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
 import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_fit_playback_controls.*
 
 class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
@@ -60,9 +58,9 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
         playPauseButton.setOnClickListener {
             if (MusicPlayerRemote.isPlaying) {
-                MusicPlayerRemote.pauseSong()
+                MusicPlayerRemote.pauseSong(activity)
             } else {
-                MusicPlayerRemote.resumePlaying()
+                MusicPlayerRemote.resumePlaying(activity)
             }
             showBonceAnimation()
         }
@@ -70,9 +68,9 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = song.artistName
-        if (PreferenceUtil.isSongInfo) {
+        title.text = song.getSongTitle()
+        text.text = song.getSongSinger()
+        if (PreferenceUtil.getInstance(requireContext()).isSongInfo) {
             songInfo.text = getSongInfo(song)
             songInfo.show()
         } else {
@@ -114,11 +112,10 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
         updateShuffleState()
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
+    override fun setDark(color: Int) {
         val colorBg = ATHUtil.resolveColor(requireContext(), android.R.attr.colorBackground)
         if (ColorUtil.isColorLight(colorBg)) {
-            lastPlaybackControlsColor =
-                MaterialValueHelper.getSecondaryTextColor(requireContext(), true)
+            lastPlaybackControlsColor = MaterialValueHelper.getSecondaryTextColor(requireContext(), true)
             lastDisabledPlaybackControlsColor =
                 MaterialValueHelper.getSecondaryDisabledTextColor(requireContext(), true)
         } else {
@@ -127,8 +124,8 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
                 MaterialValueHelper.getPrimaryDisabledTextColor(activity, false)
         }
 
-        val colorFinal = if (PreferenceUtil.isAdaptiveColor) {
-            color.primaryTextColor
+        val colorFinal = if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            color
         } else {
             ThemeStore.accentColor(requireContext()).ripAlpha()
         }
@@ -172,8 +169,8 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {
@@ -241,6 +238,19 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
         }
     }
 
+    override fun setUpProgressSlider() {
+        progressSlider.setOnSeekBarChangeListener(object : SimpleOnSeekbarChangeListener() {
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    MusicPlayerRemote.seekTo(progress)
+                    onUpdateProgressViews(
+                        MusicPlayerRemote.songProgressMillis,
+                        MusicPlayerRemote.songDurationMillis
+                    )
+                }
+            }
+        })
+    }
 
     private fun showBonceAnimation() {
         playPauseButton.apply {
@@ -263,20 +273,6 @@ class FitPlaybackControlsFragment : AbsPlayerControlsFragment() {
                         .alpha(1f).start()
                 }.start()
         }
-    }
-
-    override fun setUpProgressSlider() {
-        progressSlider.setOnSeekBarChangeListener(object : SimpleOnSeekbarChangeListener() {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    MusicPlayerRemote.seekTo(progress)
-                    onUpdateProgressViews(
-                        MusicPlayerRemote.songProgressMillis,
-                        MusicPlayerRemote.songDurationMillis
-                    )
-                }
-            }
-        })
     }
 
     override fun onUpdateProgressViews(progress: Int, total: Int) {

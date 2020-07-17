@@ -29,8 +29,8 @@ import java.util.ArrayList;
 
 public abstract class AbsCustomPlaylist extends Playlist {
 
-    public AbsCustomPlaylist(int id, String name) {
-        super(id, name);
+    public AbsCustomPlaylist(long id, String name) {
+        super(id, name, "");
     }
 
     public AbsCustomPlaylist() {
@@ -41,5 +41,5 @@ public abstract class AbsCustomPlaylist extends Playlist {
     }
 
     @NonNull
-    public abstract ArrayList<Song> getSongs(@NotNull Context context);
+    public abstract ArrayList<CommonData> getSongs(@NotNull Context context);
 }

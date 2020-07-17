@@ -20,24 +20,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/progressSlider"
         tools:ignore="RtlHardcoded,RtlSymmetry"
-         tools:text="@tools:sample/date/hhmmss" />
+        tools:text="00:22" />
 
-    <androidx.appcompat.widget.AppCompatSeekBar
+    <com.google.android.material.slider.Slider
         android:id="@+id/progressSlider"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:maxHeight="2dp"
-        android:progressDrawable="@drawable/color_progress_seek"
+        app:labelBehavior="gone"
         app:layout_constraintBottom_toTopOf="@+id/playPauseButton"
         app:layout_constraintEnd_toStartOf="@id/songTotalTime"
         app:layout_constraintStart_toEndOf="@id/songCurrentProgress"
         app:layout_constraintTop_toTopOf="parent"
+        app:thumbRadius="@dimen/slider_thumb_radius"
+        app:trackHeight="3dp"
         tools:ignore="RtlHardcoded,UnusedAttribute"
         tools:progress="20" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/songTotalTime"
-        android:layout_width="wrap_content"
+        android:layout_width="40dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:gravity="center"
@@ -48,7 +49,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/progressSlider"
         tools:ignore="RtlHardcoded,RtlSymmetry"
-         tools:text="@tools:sample/date/hhmmss" />
+        tools:text="00:22" />
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/repeatButton"
@@ -125,31 +126,29 @@
 
     <FrameLayout
         android:id="@+id/volumeFragmentContainer"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0"
-        android:paddingHorizontal="16dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         app:layout_constraintBottom_toTopOf="@+id/songInfo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/playPauseButton"
         tools:backgroundTint="@color/md_red_400"
         tools:layout_height="52dp" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/songInfo"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:ellipsize="end"
         android:gravity="center"
         android:maxLines="1"
-        android:paddingHorizontal="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/volumeFragmentContainer"
         tools:text="@tools:sample/lorem/random" />
 </androidx.constraintlayout.widget.ConstraintLayout>

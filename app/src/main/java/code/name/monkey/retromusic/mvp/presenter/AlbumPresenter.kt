@@ -14,8 +14,16 @@
 
 package code.name.monkey.retromusic.mvp.presenter
 
+import code.name.monkey.retromusic.Result.Error
+import code.name.monkey.retromusic.Result.Success
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.mvp.BaseView
+import code.name.monkey.retromusic.mvp.Presenter
+import code.name.monkey.retromusic.mvp.PresenterImpl
+import code.name.monkey.retromusic.providers.interfaces.Repository
+import kotlinx.coroutines.*
+import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by hemanths on 12/08/17.
@@ -23,4 +31,33 @@ import code.name.monkey.retromusic.mvp.BaseView
 interface AlbumsView : BaseView {
 
     fun albums(albums: List<Album>)
+}
+
+interface AlbumsPresenter : Presenter<AlbumsView> {
+
+    fun loadAlbums()
+
+    class AlbumsPresenterImpl @Inject constructor(
+        private val repository: Repository
+    ) : PresenterImpl<AlbumsView>(), AlbumsPresenter, CoroutineScope {
+
+        private val job = Job()
+
+        override val coroutineContext: CoroutineContext
+            get() = Dispatchers.IO + job
+
+        override fun detachView() {
+            super.detachView()
+            job.cancel()
+        }
+
+        override fun loadAlbums() {
+            launch {
+                when (val result = repository.allAlbums()) {
+                    is Success -> withContext(Dispatchers.Main) { view?.albums(result.data) }
+                    is Error -> withContext(Dispatchers.Main) { view?.showEmptyView() }
+                }
+            }
+        }
+    }
 }

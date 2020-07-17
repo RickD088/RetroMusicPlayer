@@ -1,18 +1,15 @@
 package code.name.monkey.retromusic.activities
 
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
-import code.name.monkey.appthemehelper.ThemeStore
+import code.name.monkey.appthemehelper.util.ATHUtil
 import code.name.monkey.appthemehelper.util.MaterialUtil
 import code.name.monkey.retromusic.App
 import code.name.monkey.retromusic.BuildConfig
-import code.name.monkey.retromusic.Constants.PRO_VERSION_PRODUCT_ID
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.base.AbsBaseActivity
 import com.anjlab.android.iab.v3.BillingProcessor
@@ -29,18 +26,18 @@ class PurchaseActivity : AbsBaseActivity(), BillingProcessor.IBillingHandler {
         setDrawUnderStatusBar()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pro_version)
-        setStatusbarColor(Color.TRANSPARENT)
-        setLightStatusbar(false)
-        setNavigationbarColor(Color.BLACK)
-        setLightNavigationBar(false)
-        toolbar.navigationIcon?.setTint(Color.WHITE)
-        toolbar.setNavigationOnClickListener { onBackPressed() }
+        setStatusbarColorAuto()
+        setNavigationbarColorAuto()
+        setLightNavigationBar(true)
+        toolbar.setBackgroundColor(ATHUtil.resolveColor(this, R.attr.colorSurface))
+        setSupportActionBar(toolbar)
 
         restoreButton.isEnabled = false
         purchaseButton.isEnabled = false
 
         billingProcessor = BillingProcessor(this, BuildConfig.GOOGLE_PLAY_LICENSING_KEY, this)
 
+        MaterialUtil.setTint(restoreButton, false)
         MaterialUtil.setTint(purchaseButton, true)
 
         restoreButton.setOnClickListener {
@@ -50,10 +47,8 @@ class PurchaseActivity : AbsBaseActivity(), BillingProcessor.IBillingHandler {
 
         }
         purchaseButton.setOnClickListener {
-            billingProcessor.purchase(this@PurchaseActivity, PRO_VERSION_PRODUCT_ID)
+            billingProcessor.purchase(this@PurchaseActivity, App.PRO_VERSION_PRODUCT_ID)
         }
-        bannerContainer.backgroundTintList =
-            ColorStateList.valueOf(ThemeStore.accentColor(this))
     }
 
     private fun restorePurchase() {

@@ -11,7 +11,6 @@ import code.name.monkey.retromusic.helper.HorizontalAdapterHelper
 import code.name.monkey.retromusic.interfaces.CabHolder
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.util.MusicUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import com.bumptech.glide.Glide
 
 class HorizontalAlbumAdapter(
@@ -28,7 +27,7 @@ class HorizontalAlbumAdapter(
         return ViewHolder(view)
     }
 
-    override fun setColors(color: MediaNotificationProcessor, holder: ViewHolder) {
+    override fun setColors(color: Int, holder: ViewHolder) {
         holder.title?.setTextColor(ATHUtil.resolveColor(activity, android.R.attr.textColorPrimary))
         holder.text?.setTextColor(ATHUtil.resolveColor(activity, android.R.attr.textColorSecondary))
     }
@@ -42,11 +41,11 @@ class HorizontalAlbumAdapter(
             .into(object : RetroMusicColoredTarget(holder.image!!) {
                 override fun onLoadCleared(placeholder: Drawable?) {
                     super.onLoadCleared(placeholder)
-                    //setColors(albumArtistFooterColor, holder)
+                    setColors(albumArtistFooterColor, holder)
                 }
 
-                override fun onColorReady(colors: MediaNotificationProcessor) {
-                    setColors(colors, holder)
+                override fun onColorReady(color: Int) {
+                    setColors(color, holder)
                 }
             })
     }

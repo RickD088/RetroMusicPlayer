@@ -8,6 +8,7 @@ import android.webkit.MimeTypeMap
 import androidx.fragment.app.Fragment
 import code.name.monkey.retromusic.activities.base.AbsMusicServiceActivity
 import code.name.monkey.retromusic.interfaces.MusicServiceEventListener
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.RetroUtil
 import org.jaudiotagger.audio.AudioFileIO
@@ -72,20 +73,23 @@ open class AbsMusicServiceFragment : Fragment(), MusicServiceEventListener {
     override fun onMediaStoreChanged() {
     }
 
-    fun getSongInfo(song: Song): String {
-        val file = File(song.data)
-        if (file.exists()) {
-            return try {
-                val audioHeader = AudioFileIO.read(File(song.data)).audioHeader
-                val string: StringBuilder = StringBuilder()
-                val uriFile = Uri.fromFile(file)
-                string.append(getMimeType(uriFile.toString())).append(" • ")
-                string.append(audioHeader.bitRate).append(" kb/s").append(" • ")
-                string.append(RetroUtil.frequencyCount(audioHeader.sampleRate.toInt()))
-                    .append(" kHz")
-                string.toString()
-            } catch (er: Exception) {
-                " - "
+    fun getSongInfo(data: CommonData): String {
+        if (data.localSong()){
+            val song = data.getLocalSong()
+            val file = File(song.data)
+            if (file.exists()) {
+                return try {
+                    val audioHeader = AudioFileIO.read(File(song.data)).audioHeader
+                    val string: StringBuilder = StringBuilder()
+                    val uriFile = Uri.fromFile(file)
+                    string.append(getMimeType(uriFile.toString())).append(" • ")
+                    string.append(audioHeader.bitRate).append(" kb/s").append(" • ")
+                    string.append(RetroUtil.frequencyCount(audioHeader.sampleRate.toInt()))
+                        .append(" kHz")
+                    string.toString()
+                } catch (er: Exception) {
+                    " - "
+                }
             }
         }
         return "-"

@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import code.name.monkey.retromusic.R;
 
@@ -54,6 +55,7 @@ public class NetworkImageView extends CircularImageView {
                 .load(imageUrl)
                 .error(R.drawable.ic_account_white_24dp)
                 .placeholder(R.drawable.ic_account_white_24dp)
+                .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false)
                 .into(this);
     }
 

@@ -105,15 +105,27 @@ class AppWidgetText : BaseAppWidget() {
         val appWidgetView = RemoteViews(service.packageName, R.layout.app_widget_text)
 
         val isPlaying = service.isPlaying
-        val song = service.currentSong
+        val data = service.currentSong
 
         // Set the titles and artwork
-        if (TextUtils.isEmpty(song.title) && TextUtils.isEmpty(song.artistName)) {
-            appWidgetView.setViewVisibility(R.id.media_titles, View.INVISIBLE)
-        } else {
-            appWidgetView.setViewVisibility(R.id.media_titles, View.VISIBLE)
-            appWidgetView.setTextViewText(R.id.title, song.title)
-            appWidgetView.setTextViewText(R.id.text, song.artistName)
+        if (data.localSong()) {
+            val song = data.getLocalSong()
+            if (TextUtils.isEmpty(song.title) && TextUtils.isEmpty(song.artistName)) {
+                appWidgetView.setViewVisibility(R.id.media_titles, View.INVISIBLE)
+            } else {
+                appWidgetView.setViewVisibility(R.id.media_titles, View.VISIBLE)
+                appWidgetView.setTextViewText(R.id.title, song.title)
+                appWidgetView.setTextViewText(R.id.text, song.artistName)
+            }
+        } else if (data.cloudSong()) {
+            val song = data.getCloudSong()
+            if (TextUtils.isEmpty(song.songName) && TextUtils.isEmpty(song.singerName)) {
+                appWidgetView.setViewVisibility(R.id.media_titles, View.INVISIBLE)
+            } else {
+                appWidgetView.setViewVisibility(R.id.media_titles, View.VISIBLE)
+                appWidgetView.setTextViewText(R.id.title, song.songName)
+                appWidgetView.setTextViewText(R.id.text, song.singerName)
+            }
         }
         // Link actions buttons to intents
         linkButtons(service, appWidgetView)

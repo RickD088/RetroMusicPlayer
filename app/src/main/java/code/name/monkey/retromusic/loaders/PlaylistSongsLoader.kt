@@ -18,12 +18,12 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.AudioColumns
-import code.name.monkey.retromusic.Constants.IS_MUSIC
-import code.name.monkey.retromusic.model.AbsCustomPlaylist
-import code.name.monkey.retromusic.model.Playlist
-import code.name.monkey.retromusic.model.PlaylistSong
-import code.name.monkey.retromusic.model.Song
-import java.util.*
+import code.name.monkey.retromusic.Constants.BASE_SELECTION
+import code.name.monkey.retromusic.extensions.toCommonData
+import code.name.monkey.retromusic.model.*
+import code.name.monkey.retromusic.providers.HistoryStore
+import code.name.monkey.retromusic.providers.PlaylistStore
+import kotlin.collections.ArrayList
 
 /**
  * Created by hemanths on 16/08/17.
@@ -34,9 +34,9 @@ object PlaylistSongsLoader {
     fun getPlaylistSongList(
         context: Context,
         playlist: Playlist
-    ): ArrayList<Song> {
+    ): ArrayList<CommonData> {
         return (playlist as? AbsCustomPlaylist)?.getSongs(context)
-            ?: getPlaylistSongList(context, playlist.id)
+            ?: getPlaylistSongsFromDb(context, playlist.id)
     }
 
     @JvmStatic
@@ -51,6 +51,57 @@ object PlaylistSongsLoader {
         }
         cursor?.close()
         return songs
+    }
+
+    fun getPlaylistSongsFromDb(context: Context, playlistId: Long): ArrayList<CommonData> {
+        return SongLoader.getSongsFromDataBase(
+            makeSongCursorAndClearUpDatabase(
+                context,
+                playlistId
+            )
+        )
+    }
+
+    private fun makeSongCursorAndClearUpDatabase(context: Context, playlistId: Long): Cursor? {
+        val retCursor = makeSongCursorImpl(context, playlistId)
+        // clean up the databases with any ids not found
+        if (retCursor != null) {
+            val missingIds = retCursor.missingIds
+            if (missingIds != null && missingIds.size > 0) {
+                for (id in missingIds) {
+                    HistoryStore.getInstance(context).removeSongId(id)
+                }
+            }
+        }
+        return retCursor
+    }
+
+    private fun makeSongCursorImpl(context: Context, playlistId: Long): SortedLongCursor? {
+        val playlistCursor =
+            PlaylistStore.getInstance(context).queryPlaylistById(playlistId.toString())
+        playlistCursor.use {
+            return makeSortLongCursor(context, it)
+        }
+    }
+
+    private fun makeSortLongCursor(context: Context, playlistCursor: Cursor): SortedLongCursor? {
+        if (playlistCursor.moveToFirst()) {
+            val songIds =
+                playlistCursor.getString(playlistCursor.getColumnIndex(PlaylistStore.PlaylistStoreColumns.SONG_IDS))
+            if (songIds.isNotEmpty()) {
+                val ids = songIds.split(",")
+                val order = LongArray(ids.size)
+                for (index in ids.indices) {
+                    order[index] = ids[index].toLong()
+                }
+                val songCursor =
+                    HistoryStore.getInstance(context).queryRecentSongByIds("($songIds)")
+                if (songCursor != null) {
+                    return SortedLongCursor(songCursor, order, HistoryStore.SongStoreColumns.ID)
+                }
+            }
+        }
+        return null
     }
 
     private fun getPlaylistSongFromCursorImpl(cursor: Cursor, playlistId: Int): PlaylistSong {
@@ -105,7 +156,7 @@ object PlaylistSongsLoader {
                     MediaStore.Audio.Playlists.Members._ID,//11
                     AudioColumns.COMPOSER
                 )// 12
-                , IS_MUSIC, null,
+                , BASE_SELECTION, null,
                 MediaStore.Audio.Playlists.Members.DEFAULT_SORT_ORDER
             )
         } catch (e: SecurityException) {

@@ -16,12 +16,13 @@ package code.name.monkey.retromusic.loaders
 
 import android.content.Context
 import android.provider.MediaStore.Audio.AudioColumns
-import code.name.monkey.retromusic.helper.SortOrder
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.PreferenceUtil
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.isNotEmpty
+import kotlin.collections.sortWith
 
 
 /**
@@ -39,7 +40,7 @@ object AlbumLoader {
                 context,
                 AudioColumns.ALBUM + " LIKE ?",
                 arrayOf("%$query%"),
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         return splitIntoAlbums(songs)
@@ -55,7 +56,7 @@ object AlbumLoader {
                 context,
                 AudioColumns.ALBUM_ID + "=?",
                 arrayOf(albumId.toString()),
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         val album = Album(songs)
@@ -71,7 +72,7 @@ object AlbumLoader {
                 context,
                 null,
                 null,
-                getSongLoaderSortOrder()
+                getSongLoaderSortOrder(context)
             )
         )
         return splitIntoAlbums(songs)
@@ -107,32 +108,12 @@ object AlbumLoader {
     }
 
     private fun sortSongsByTrackNumber(album: Album) {
-        when (PreferenceUtil.albumDetailSongSortOrder) {
-            SortOrder.AlbumSongSortOrder.SONG_TRACK_LIST -> album.songs?.sortWith(Comparator { o1, o2 ->
-                o1.trackNumber.compareTo(
-                    o2.trackNumber
-                )
-            })
-            SortOrder.AlbumSongSortOrder.SONG_A_Z -> album.songs?.sortWith(Comparator { o1, o2 ->
-                o1.title.compareTo(
-                    o2.title
-                )
-            })
-            SortOrder.AlbumSongSortOrder.SONG_Z_A -> album.songs?.sortWith(Comparator { o1, o2 ->
-                o2.title.compareTo(
-                    o1.title
-                )
-            })
-            SortOrder.AlbumSongSortOrder.SONG_DURATION -> album.songs?.sortWith(Comparator { o1, o2 ->
-                o1.duration.compareTo(
-                    o2.duration
-                )
-            })
-        }
+        album.songs?.sortWith(Comparator { o1, o2 -> o1.trackNumber.compareTo(o2.trackNumber) })
     }
 
-    private fun getSongLoaderSortOrder(): String {
-        return PreferenceUtil.albumSortOrder + ", " +
-                PreferenceUtil.albumSongSortOrder
+    private fun getSongLoaderSortOrder(context: Context): String {
+        return PreferenceUtil.getInstance(context).albumSortOrder + ", " + PreferenceUtil.getInstance(
+            context
+        ).albumSongSortOrder
     }
 }

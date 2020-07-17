@@ -16,16 +16,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="128dp"
     android:layout_height="128dp"
-    android:layout_margin="4dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="0dp">
+    app:cardUseCompatPadding="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/paletteColorContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/artist_card_gradient_effect"
-        tools:backgroundTint="@color/md_red_500">
+        android:background="@drawable/artist_card_gradient_effect">
 
         <code.name.monkey.retromusic.views.RetroShapeableImageView
             android:id="@+id/image"
@@ -37,7 +35,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:retroCornerSize="21dp"
-            app:srcCompat="@drawable/default_album_art"
             tools:src="@tools:sample/avatars" />
 
         <com.google.android.material.textview.MaterialTextView

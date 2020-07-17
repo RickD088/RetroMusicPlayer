@@ -1,6 +1,5 @@
 package code.name.monkey.retromusic.fragments.player.color
 
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -8,24 +7,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
-import android.widget.SeekBar
 import code.name.monkey.appthemehelper.util.ColorUtil
 import code.name.monkey.appthemehelper.util.TintHelper
 import code.name.monkey.retromusic.R
-import code.name.monkey.retromusic.extensions.applyColor
 import code.name.monkey.retromusic.extensions.hide
 import code.name.monkey.retromusic.extensions.show
 import code.name.monkey.retromusic.fragments.base.AbsPlayerControlsFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
-import code.name.monkey.retromusic.misc.SimpleOnSeekbarChangeListener
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
-
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
+import code.name.monkey.retromusic.util.ViewUtil
 import kotlinx.android.synthetic.main.fragment_color_player_playback_controls.*
 
 class ColorPlaybackControlsFragment : AbsPlayerControlsFragment() {
@@ -66,10 +60,10 @@ class ColorPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = song.artistName
+        title.text = song.getSongTitle()
+        text.text = song.getSongSinger()
 
-        if (PreferenceUtil.isSongInfo) {
+        if (PreferenceUtil.getInstance(requireContext()).isSongInfo) {
             songInfo.text = getSongInfo(song)
             songInfo.show()
         } else {
@@ -101,20 +95,26 @@ class ColorPlaybackControlsFragment : AbsPlayerControlsFragment() {
         updateShuffleState()
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
-        TintHelper.setTintAuto(playPauseButton, color.primaryTextColor, true)
-        TintHelper.setTintAuto(playPauseButton, color.backgroundColor, false)
-        progressSlider.applyColor(color.primaryTextColor)
+    fun setDark(textColor: Int, background: Int) {
+        setDark(textColor)
+        TintHelper.setTintAuto(playPauseButton, background, false)
+        TintHelper.setTintAuto(playPauseButton, textColor, true)
+    }
 
-        title.setTextColor(color.primaryTextColor)
-        text.setTextColor(color.secondaryTextColor)
-        songInfo.setTextColor(color.secondaryTextColor)
-        songCurrentProgress.setTextColor(color.secondaryTextColor)
-        songTotalTime.setTextColor(color.secondaryTextColor)
-        volumeFragment?.setTintableColor(color.primaryTextColor)
+    override fun setDark(color: Int) {
+        lastPlaybackControlsColor = color
+        lastDisabledPlaybackControlsColor = ColorUtil.withAlpha(color, 0.5f)
 
-        lastPlaybackControlsColor = color.secondaryTextColor
-        lastDisabledPlaybackControlsColor = ColorUtil.withAlpha(color.secondaryTextColor, 0.25f)
+        title.setTextColor(lastPlaybackControlsColor)
+        text.setTextColor(lastDisabledPlaybackControlsColor)
+        songInfo.setTextColor(lastDisabledPlaybackControlsColor)
+
+        ViewUtil.setProgressDrawable(progressSlider, lastPlaybackControlsColor, true)
+
+        volumeFragment?.setTintableColor(color)
+
+        songCurrentProgress.setTextColor(lastDisabledPlaybackControlsColor)
+        songTotalTime.setTextColor(lastDisabledPlaybackControlsColor)
 
         updateRepeatState()
         updateShuffleState()
@@ -144,8 +144,8 @@ class ColorPlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {
@@ -211,29 +211,22 @@ class ColorPlaybackControlsFragment : AbsPlayerControlsFragment() {
         }
     }
 
-    override fun setUpProgressSlider() {
-        progressSlider.setOnSeekBarChangeListener(object : SimpleOnSeekbarChangeListener() {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    MusicPlayerRemote.seekTo(progress)
-                    onUpdateProgressViews(
-                        MusicPlayerRemote.songProgressMillis,
-                        MusicPlayerRemote.songDurationMillis
-                    )
-                }
-            }
-        })
-    }
-
     override fun onUpdateProgressViews(progress: Int, total: Int) {
-        progressSlider.max = total
-
-        val animator = ObjectAnimator.ofInt(progressSlider, "progress", progress)
-        animator.duration = SLIDER_ANIMATION_TIME
-        animator.interpolator = LinearInterpolator()
-        animator.start()
-
+        progressSlider.valueTo = total.toFloat()
+        progressSlider.value = progress.toFloat()
         songTotalTime.text = MusicUtil.getReadableDurationString(total.toLong())
         songCurrentProgress.text = MusicUtil.getReadableDurationString(progress.toLong())
+    }
+
+    override fun setUpProgressSlider() {
+        progressSlider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                MusicPlayerRemote.seekTo(value.toInt())
+                onUpdateProgressViews(
+                    MusicPlayerRemote.songProgressMillis,
+                    MusicPlayerRemote.songDurationMillis
+                )
+            }
+        }
     }
 }

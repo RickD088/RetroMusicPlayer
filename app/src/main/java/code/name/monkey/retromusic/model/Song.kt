@@ -14,6 +14,7 @@
 package code.name.monkey.retromusic.model
 
 import android.os.Parcelable
+import code.name.monkey.retromusic.interfaces.CommonDataConverter
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
@@ -30,11 +31,9 @@ open class Song(
     val artistId: Int,
     val artistName: String,
     val composer: String?
-) : Parcelable {
-
+) : Parcelable, CommonDataConverter {
 
     companion object {
-
         @JvmStatic
         val emptySong = Song(
             -1,
@@ -50,5 +49,9 @@ open class Song(
             "",
             ""
         )
+    }
+
+    override fun convertToCommonData(): CommonData {
+        return CommonData(CommonData.TYPE_LOCAL_SONG, localData = this)
     }
 }

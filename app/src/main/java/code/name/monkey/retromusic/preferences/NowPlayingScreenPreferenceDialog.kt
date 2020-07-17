@@ -26,7 +26,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat.SRC_IN
-import androidx.fragment.app.DialogFragment
+import androidx.preference.PreferenceDialogFragmentCompat
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import code.name.monkey.appthemehelper.common.prefs.supportv7.ATEDialogPreference
@@ -38,8 +38,10 @@ import code.name.monkey.retromusic.fragments.NowPlayingScreen.*
 import code.name.monkey.retromusic.util.NavigationUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.ViewUtil
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.customview.customView
 import com.bumptech.glide.Glide
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 
 class NowPlayingScreenPreference @JvmOverloads constructor(
     context: Context,
@@ -56,13 +58,14 @@ class NowPlayingScreenPreference @JvmOverloads constructor(
 
     init {
         icon?.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-            context.colorControlNormal(),
+            colorControlNormal(context),
             SRC_IN
         )
     }
 }
 
-class NowPlayingScreenPreferenceDialog : DialogFragment(), ViewPager.OnPageChangeListener {
+class NowPlayingScreenPreferenceDialog : PreferenceDialogFragmentCompat(),
+    ViewPager.OnPageChangeListener {
 
     private var viewPagerPosition: Int = 0
 
@@ -76,6 +79,9 @@ class NowPlayingScreenPreferenceDialog : DialogFragment(), ViewPager.OnPageChang
         this.viewPagerPosition = position
     }
 
+    override fun onDialogClosed(positiveResult: Boolean) {
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val view = LayoutInflater.from(requireContext())
             .inflate(R.layout.preference_dialog_now_playing_screen, null)
@@ -84,28 +90,11 @@ class NowPlayingScreenPreferenceDialog : DialogFragment(), ViewPager.OnPageChang
         viewPager.adapter = NowPlayingScreenAdapter(requireContext())
         viewPager.addOnPageChangeListener(this)
         viewPager.pageMargin = ViewUtil.convertDpToPixel(32f, resources).toInt()
-        viewPager.currentItem = PreferenceUtil.nowPlayingScreen.ordinal
+        viewPager.currentItem =
+            PreferenceUtil.getInstance(requireContext()).nowPlayingScreen.ordinal
 
-        return MaterialAlertDialogBuilder(
-            requireContext(),
-            R.style.ThemeOverlay_MaterialComponents_Dialog_Alert
-        )
-            .setTitle(R.string.pref_title_now_playing_screen_appearance)
-            .setCancelable(false)
-            .setPositiveButton(R.string.set) { _, _ ->
-                val nowPlayingScreen = values()[viewPagerPosition]
-                if (isNowPlayingThemes(nowPlayingScreen)) {
-                    val result =
-                        getString(nowPlayingScreen.titleRes) + " theme is Pro version feature."
-                    Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
-                    NavigationUtil.goToProVersion(requireContext())
-                } else {
-                    PreferenceUtil.nowPlayingScreen = nowPlayingScreen
-                }
-            }
-            .setView(view)
-            .create()
-        /*.show {
+
+        return MaterialDialog(requireContext()).show {
             title(R.string.pref_title_now_playing_screen_appearance)
             positiveButton(R.string.set) {
                 val nowPlayingScreen = values()[viewPagerPosition]
@@ -115,18 +104,22 @@ class NowPlayingScreenPreferenceDialog : DialogFragment(), ViewPager.OnPageChang
                     Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                     NavigationUtil.goToProVersion(requireContext())
                 } else {
-                    PreferenceUtilKT.nowPlayingScreen = nowPlayingScreen
+                    PreferenceUtil.getInstance(requireContext()).nowPlayingScreen = nowPlayingScreen
                 }
             }
-
+            cornerRadius(PreferenceUtil.getInstance(requireContext()).dialogCorner)
             negativeButton(android.R.string.cancel)
             customView(view = view, scrollable = false, noVerticalPadding = false)
-        }*/
+        }
     }
 
     companion object {
-        fun newInstance(): NowPlayingScreenPreferenceDialog {
-            return NowPlayingScreenPreferenceDialog()
+        fun newInstance(key: String): NowPlayingScreenPreferenceDialog {
+            val bundle = Bundle()
+            bundle.putString(ARG_KEY, key)
+            val fragment = NowPlayingScreenPreferenceDialog()
+            fragment.arguments = bundle
+            return fragment
         }
     }
 }
@@ -147,7 +140,8 @@ private class NowPlayingScreenAdapter(private val context: Context) : PagerAdapt
         val image = layout.findViewById<ImageView>(R.id.image)
         val title = layout.findViewById<TextView>(R.id.title)
         val proText = layout.findViewById<TextView>(R.id.proText)
-        Glide.with(context).load(nowPlayingScreen.drawableResId).into(image)
+        Glide.with(context).load(nowPlayingScreen.drawableResId)
+            .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false).into(image)
         title.setText(nowPlayingScreen.titleRes)
         if (isNowPlayingThemes(nowPlayingScreen)) {
             proText.setText(R.string.pro)
@@ -179,14 +173,14 @@ private class NowPlayingScreenAdapter(private val context: Context) : PagerAdapt
 }
 
 private fun isNowPlayingThemes(screen: NowPlayingScreen): Boolean {
-    return (screen == Full ||
-            screen == Card ||
-            screen == Plain ||
-            screen == Blur ||
-            screen == Color ||
-            screen == Simple ||
-            screen == BlurCard ||
-            screen == Circle ||
-            screen == Adaptive)
+    return (screen == FULL ||
+            screen == CARD ||
+            screen == PLAIN ||
+            screen == BLUR ||
+            screen == COLOR ||
+            screen == SIMPLE ||
+            screen == BLUR_CARD ||
+            screen == CIRCLE ||
+            screen == ADAPTIVE)
             && !App.isProVersion()
 }

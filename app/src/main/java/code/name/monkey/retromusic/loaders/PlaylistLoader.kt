@@ -20,6 +20,7 @@ import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.PlaylistsColumns
 import code.name.monkey.retromusic.model.Playlist
+import code.name.monkey.retromusic.providers.PlaylistStore
 import java.util.*
 
 /**
@@ -41,6 +42,7 @@ object PlaylistLoader {
     }
 
     fun searchPlaylist(context: Context, searchString: String): List<Playlist> {
+
         return getAllPlaylists(
             makePlaylistCursor(
                 context, PlaylistsColumns.NAME + "=?", arrayOf(searchString)
@@ -97,6 +99,13 @@ object PlaylistLoader {
     }
 
     private fun makePlaylistCursor(
+        context: Context, selection: String?,
+        values: Array<String>?
+    ): Cursor? {
+        return PlaylistStore.getInstance(context).queryAllPlaylist(selection, values)
+    }
+
+    /*private fun makePlaylistCursor(
         context: Context,
         selection: String?,
         values: Array<String>?
@@ -105,9 +114,9 @@ object PlaylistLoader {
             return context.contentResolver.query(
                 MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
                 arrayOf(
-                    BaseColumns._ID, /* 0 */
-                    PlaylistsColumns.NAME /* 1 */
-                ),
+                    BaseColumns._ID, *//* 0 *//*
+                    PlaylistsColumns.NAME
+                ), *//* 1 *//*
                 selection,
                 values,
                 MediaStore.Audio.Playlists.DEFAULT_SORT_ORDER
@@ -115,16 +124,16 @@ object PlaylistLoader {
         } catch (e: SecurityException) {
             return null
         }
-    }
+    }*/
 
     fun getPlaylist(
         context: Context,
-        playlistId: Int
+        playlistId: Long
     ): Playlist {
         return getPlaylist(
             makePlaylistCursor(
                 context,
-                BaseColumns._ID + "=?",
+                PlaylistStore.PlaylistStoreColumns.ID + "=?",
                 arrayOf(playlistId.toString())
             )
         )
@@ -133,8 +142,9 @@ object PlaylistLoader {
     private fun getPlaylistFromCursorImpl(
         cursor: Cursor
     ): Playlist {
-        val id = cursor.getInt(0)
+        val id = cursor.getLong(0)
         val name = cursor.getString(1)
-        return Playlist(id, name)
+        val songIds = cursor.getString(2)
+        return Playlist(id, name, songIds)
     }
 }

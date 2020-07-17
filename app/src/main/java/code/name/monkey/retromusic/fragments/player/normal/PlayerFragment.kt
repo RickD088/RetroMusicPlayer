@@ -14,11 +14,10 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.fragments.base.AbsPlayerFragment
 import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
-
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.ViewUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import code.name.monkey.retromusic.views.DrawableGradient
 import kotlinx.android.synthetic.main.fragment_player.*
 
@@ -29,7 +28,7 @@ class PlayerFragment : AbsPlayerFragment() {
     override val paletteColor: Int
         get() = lastColor
 
-    private lateinit var controlsFragment: PlayerPlaybackControlsFragment
+    private lateinit var playbackControlsFragment: PlayerPlaybackControlsFragment
     private var valueAnimator: ValueAnimator? = null
 
 
@@ -59,11 +58,11 @@ class PlayerFragment : AbsPlayerFragment() {
     }
 
     override fun onShow() {
-        controlsFragment.show()
+        playbackControlsFragment.show()
     }
 
     override fun onHide() {
-        controlsFragment.hide()
+        playbackControlsFragment.hide()
         onBackPressed()
     }
 
@@ -75,9 +74,9 @@ class PlayerFragment : AbsPlayerFragment() {
         return ATHUtil.resolveColor(requireContext(), R.attr.colorControlNormal)
     }
 
-    override fun onColorChanged(color: MediaNotificationProcessor) {
-        controlsFragment.setColor(color)
-        lastColor = color.backgroundColor
+    override fun onColorChanged(color: Int) {
+        playbackControlsFragment.setDark(color)
+        lastColor = color
         callbacks?.onPaletteColorChanged()
 
         ToolbarContentTintHelper.colorizeToolbar(
@@ -86,14 +85,14 @@ class PlayerFragment : AbsPlayerFragment() {
             requireActivity()
         )
 
-        if (PreferenceUtil.isAdaptiveColor) {
-            colorize(color.backgroundColor)
+        if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            colorize(color)
         }
     }
 
-    override fun toggleFavorite(song: Song) {
+    override fun toggleFavorite(song: CommonData) {
         super.toggleFavorite(song)
-        if (song.id == MusicPlayerRemote.currentSong.id) {
+        if (song.getSongId() == MusicPlayerRemote.currentSong.getSongId()) {
             updateIsFavorite()
         }
     }
@@ -119,7 +118,7 @@ class PlayerFragment : AbsPlayerFragment() {
 
 
     private fun setUpSubFragments() {
-        controlsFragment =
+        playbackControlsFragment =
             childFragmentManager.findFragmentById(R.id.playbackControlsFragment) as PlayerPlaybackControlsFragment
         val playerAlbumCoverFragment =
             childFragmentManager.findFragmentById(R.id.playerAlbumCoverFragment) as PlayerAlbumCoverFragment

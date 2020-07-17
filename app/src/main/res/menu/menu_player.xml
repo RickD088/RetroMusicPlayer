@@ -10,7 +10,7 @@
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/now_playing"
-        android:icon="@drawable/ic_queue_music_white_24dp"
+        android:icon="@drawable/ic_playlist_play_white_24dp"
         android:orderInCategory="2"
         android:title="@string/now_playing_queue"
         app:showAsAction="ifRoom" />
@@ -72,4 +72,8 @@
         android:id="@+id/action_delete_from_device"
         android:orderInCategory="13"
         android:title="@string/action_delete_from_device" />
+    <item
+        android:id="@+id/action_download"
+        android:orderInCategory="14"
+        android:title="@string/download" />
 </menu>

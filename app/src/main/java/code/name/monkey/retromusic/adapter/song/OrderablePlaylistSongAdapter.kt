@@ -7,8 +7,8 @@ import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.R.menu
 import code.name.monkey.retromusic.dialogs.RemoveFromPlaylistDialog
 import code.name.monkey.retromusic.interfaces.CabHolder
-import code.name.monkey.retromusic.model.PlaylistSong
-import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.model.CommonData
+import code.name.monkey.retromusic.model.Playlist
 import code.name.monkey.retromusic.util.ViewUtil
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemViewHolder
@@ -17,10 +17,11 @@ import com.h6ah4i.android.widget.advrecyclerview.draggable.annotation.DraggableI
 
 class OrderablePlaylistSongAdapter(
     activity: AppCompatActivity,
-    dataSet: ArrayList<Song>,
+    dataSet: ArrayList<CommonData>,
     itemLayoutRes: Int,
     cabHolder: CabHolder?,
-    private val onMoveItemListener: OnMoveItemListener?
+    private val onMoveItemListener: OnMoveItemListener?,
+    private val playlist: Playlist
 ) : PlaylistSongAdapter(
     activity, dataSet, itemLayoutRes, cabHolder
 ), DraggableItemAdapter<OrderablePlaylistSongAdapter.ViewHolder> {
@@ -29,8 +30,8 @@ class OrderablePlaylistSongAdapter(
         setMultiSelectMenuRes(menu.menu_playlists_songs_selection)
     }
 
-    override fun createViewHolder(view: View): SongAdapter.ViewHolder {
-        return ViewHolder(view)
+    override fun createViewHolder(view: View, type: Int): SongAdapter.ViewHolder {
+        return ViewHolder(view, type)
     }
 
     override fun getItemId(position: Int): Long {
@@ -41,17 +42,15 @@ class OrderablePlaylistSongAdapter(
         if (positionFinal < 0) {
             long = -2
         } else {
-            if (dataSet[positionFinal] is PlaylistSong) {
-                long = (dataSet[positionFinal] as PlaylistSong).idInPlayList.toLong()
-            }
+            long = dataSet[positionFinal].getSongId().toLong()
         }
         return long
     }
 
-    override fun onMultipleItemAction(menuItem: MenuItem, selection: ArrayList<Song>) {
+    override fun onMultipleItemAction(menuItem: MenuItem, selection: ArrayList<CommonData>) {
         when (menuItem.itemId) {
             R.id.action_remove_from_playlist -> {
-                RemoveFromPlaylistDialog.create(selection as ArrayList<PlaylistSong>)
+                RemoveFromPlaylistDialog.create(playlist.id, selection)
                     .show(activity.supportFragmentManager, "ADD_PLAYLIST")
                 return
             }
@@ -60,9 +59,9 @@ class OrderablePlaylistSongAdapter(
     }
 
     override fun onCheckCanStartDrag(holder: ViewHolder, position: Int, x: Int, y: Int): Boolean {
-        return onMoveItemListener != null && position > 0 && (ViewUtil.hitTest(
-            holder.dragView!!, x, y
-        ) || ViewUtil.hitTest(holder.image!!, x, y))
+        return onMoveItemListener != null && position > 0 &&
+                ((holder.dragView != null && ViewUtil.hitTest(holder.dragView!!, x, y))
+                || (holder.image != null && ViewUtil.hitTest(holder.image!!, x, y)))
     }
 
     override fun onGetItemDraggableRange(holder: ViewHolder, position: Int): ItemDraggableRange {
@@ -91,7 +90,7 @@ class OrderablePlaylistSongAdapter(
         fun onMoveItem(fromPosition: Int, toPosition: Int)
     }
 
-    inner class ViewHolder(itemView: View) : PlaylistSongAdapter.ViewHolder(itemView),
+    inner class ViewHolder(itemView: View, type: Int) : PlaylistSongAdapter.ViewHolder(itemView, type),
         DraggableItemViewHolder {
         @DraggableItemStateFlags
         private var mDragStateFlags: Int = 0
@@ -115,7 +114,7 @@ class OrderablePlaylistSongAdapter(
         override fun onSongMenuItemClick(item: MenuItem): Boolean {
             when (item.itemId) {
                 R.id.action_remove_from_playlist -> {
-                    RemoveFromPlaylistDialog.create(song as PlaylistSong)
+                    RemoveFromPlaylistDialog.create(playlist.id, song)
                         .show(activity.supportFragmentManager, "REMOVE_FROM_PLAYLIST")
                     return true
                 }

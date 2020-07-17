@@ -20,9 +20,7 @@ import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.helper.PlayPauseButtonOnClickHandler
 import code.name.monkey.retromusic.service.MusicService
 import code.name.monkey.retromusic.util.MusicUtil
-
 import code.name.monkey.retromusic.util.PreferenceUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import kotlinx.android.synthetic.main.fragment_simple_controls_fragment.*
 
 /**
@@ -83,9 +81,9 @@ class SimplePlaybackControlsFragment : AbsPlayerControlsFragment() {
         title.isSelected = true
         playPauseButton.setOnClickListener {
             if (MusicPlayerRemote.isPlaying) {
-                MusicPlayerRemote.pauseSong()
+                MusicPlayerRemote.pauseSong(activity)
             } else {
-                MusicPlayerRemote.resumePlaying()
+                MusicPlayerRemote.resumePlaying(activity)
             }
             showBonceAnimation(playPauseButton)
         }
@@ -101,8 +99,8 @@ class SimplePlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun setUpPrevNext() {
         updatePrevNextColor()
-        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong() }
-        previousButton.setOnClickListener { MusicPlayerRemote.back() }
+        nextButton.setOnClickListener { MusicPlayerRemote.playNextSong(activity) }
+        previousButton.setOnClickListener { MusicPlayerRemote.back(activity) }
     }
 
     private fun updatePrevNextColor() {
@@ -153,10 +151,10 @@ class SimplePlaybackControlsFragment : AbsPlayerControlsFragment() {
 
     private fun updateSong() {
         val song = MusicPlayerRemote.currentSong
-        title.text = song.title
-        text.text = song.artistName
+        title.text = song.getSongTitle()
+        text.text = song.getSongSinger()
 
-        if (PreferenceUtil.isSongInfo) {
+        if (PreferenceUtil.getInstance(requireContext()).isSongInfo) {
             songInfo.text = getSongInfo(song)
             songInfo.show()
         } else {
@@ -199,22 +197,20 @@ class SimplePlaybackControlsFragment : AbsPlayerControlsFragment() {
         )
     }
 
-    override fun setColor(color: MediaNotificationProcessor) {
+    override fun setDark(color: Int) {
         val colorBg = ATHUtil.resolveColor(requireContext(), android.R.attr.colorBackground)
         if (ColorUtil.isColorLight(colorBg)) {
-            lastPlaybackControlsColor =
-                MaterialValueHelper.getSecondaryTextColor(requireContext(), true)
+            lastPlaybackControlsColor = MaterialValueHelper.getSecondaryTextColor(requireContext(), true)
             lastDisabledPlaybackControlsColor =
                 MaterialValueHelper.getSecondaryDisabledTextColor(requireContext(), true)
         } else {
-            lastPlaybackControlsColor =
-                MaterialValueHelper.getPrimaryTextColor(requireContext(), false)
+            lastPlaybackControlsColor = MaterialValueHelper.getPrimaryTextColor(requireContext(), false)
             lastDisabledPlaybackControlsColor =
                 MaterialValueHelper.getPrimaryDisabledTextColor(requireContext(), false)
         }
 
-        val colorFinal = if (PreferenceUtil.isAdaptiveColor) {
-            color.primaryTextColor
+        val colorFinal = if (PreferenceUtil.getInstance(requireContext()).adaptiveColor) {
+            color
         } else {
             ThemeStore.accentColor(requireContext())
         }
@@ -223,10 +219,7 @@ class SimplePlaybackControlsFragment : AbsPlayerControlsFragment() {
 
         TintHelper.setTintAuto(
             playPauseButton,
-            MaterialValueHelper.getPrimaryTextColor(
-                requireContext(),
-                ColorUtil.isColorLight(colorFinal)
-            ),
+            MaterialValueHelper.getPrimaryTextColor(context!!, ColorUtil.isColorLight(colorFinal)),
             false
         )
         TintHelper.setTintAuto(playPauseButton, colorFinal, true)

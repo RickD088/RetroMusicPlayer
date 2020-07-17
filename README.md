@@ -5,30 +5,20 @@
 [![Generic badge](https://img.shields.io/badge/Download-Google_Play-green.svg)](https://play.google.com/store/apps/details?id=free.music.reward.download.song)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/retromusicapp/RetroMusicPlayer/blob/master/LICENSE.txt)
 ![Twitter Follow](https://img.shields.io/twitter/follow/retromusicapp?style=social)
-## 🆕 Material Design music player for Android music lovers 
+## 🆕 Material Design music player for Android music lovers
 
 ## Screenshots
-### App Themes
-| <img src="screenshots/home.jpeg" width="200"/> | <img src="screenshots/home_dark.jpeg" width="200"/> | <img src="screenshots/home_black.jpeg" width="200"/> |
+### Music
+| <img src="screenshots/home.png" width="200"/> | <img src="screenshots/search.png" width="200"/> | <img src="screenshots/player.png" width="200"/> |
 |:---:|:---:|:---:|
-|Clearly white| Kinda dark | Just black|
+| Home | Search | Player |
 
-### Player screen
-| <img src="screenshots/home.jpeg" width="200"/>| <img src="screenshots/list.jpeg" width="200"/>| <img src="screenshots/albums.jpeg" width="200"/>| <img src="screenshots/settings.jpeg" width="200"/>|
-|:---:|:---:|:---:|:---:|
-| Home | Songs | Albums | Settings |
+### Reward
+| <img src="screenshots/reward.png" width="200"/> | <img src="screenshots/withdraw.png" width="200"/> | <img src="screenshots/about.png" width="200"/> |
+|:---:|:---:|:---:|
+| Reward | Withdraw | About |
 
-### 9+ Now playing themes
- 
-| <img src="screenshots/np_normal.jpeg" width="200"/>	|<img src="screenshots/np_fit.jpeg" width="200"/>|   <img src="screenshots/np_flat.jpeg" width="200"/>  	|    <img src="screenshots/np_color.jpeg" width="200"/> 	|     <img src="screenshots/np_material.jpeg" width="200"/>	|
-|:-----:	|:-----:	|:-----:	|:-----:	|:-----:	|
-| Normal 	| Fit 	| Flat 	| Color 	| Material 	|
-
-| <img src="screenshots/no_classic.jpeg" width="200"/>	|<img src="screenshots/np_adaptive.jpeg" width="200"/>|   <img src="screenshots/np_blur.jpeg" width="200"/>  	|    <img src="screenshots/np_tiny.jpeg" width="200"/> 	|     <img src="screenshots/np_peak.jpeg" width="200"/>	|
-|:-----:	|:-----:	|:-----:	|:-----:	|:-----:	|
-| Classic 	| Adaptive 	| Blur 	| Tiny 	| Peak 	|
-
-### 🧭 Navigation never made easier 
+### 🧭 Navigation never made easier
 Self-explanatory interface without overloaded menus
 
 ### 🎨 Colorful
@@ -78,6 +68,11 @@ Retro Music Player is released under the GNU General Public License v3.0
 (GPLv3), which can be found here: [License](LICENSE.md)
 
 
+> 
 >Please note: We evolved from the original Retro Music player that Mr Hemanths developed,
 >so that can support online music download or music streaming. The free musics are provided
 >by the [Jamendo](https://www.jamendo.com/) which we fully appreciated of.
+>
+>What's more? We also include a reward system so that users could collect money by watching
+>videos from ads platforms, for free of course. ☺️ Wish you a good one!
+>

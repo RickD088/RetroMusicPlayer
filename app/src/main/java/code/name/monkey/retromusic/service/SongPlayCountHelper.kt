@@ -15,19 +15,26 @@
 package code.name.monkey.retromusic.service
 
 import code.name.monkey.retromusic.helper.StopWatch
+import code.name.monkey.retromusic.model.CommonData
 import code.name.monkey.retromusic.model.Song
 
 class SongPlayCountHelper {
 
     private val stopWatch = StopWatch()
-    var song = Song.emptySong
+    var song = CommonData(CommonData.TYPE_EMPTY)
         private set
 
     fun shouldBumpPlayCount(): Boolean {
-        return song.duration * 0.5 < stopWatch.elapsedTime
+        if (song.localSong()) {
+            return song.getLocalSong().duration * 0.5 < stopWatch.elapsedTime
+        } else if (song.cloudSong()) {
+            return song.getCloudSong().getDuration() * 0.5 < stopWatch.elapsedTime
+        } else {
+            return false
+        }
     }
 
-    fun notifySongChanged(song: Song) {
+    fun notifySongChanged(song: CommonData) {
         synchronized(this) {
             stopWatch.reset()
             this.song = song

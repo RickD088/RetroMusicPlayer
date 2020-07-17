@@ -8,15 +8,21 @@
         android:title="@string/for_you" />
 
     <item
+        android:id="@+id/action_gift"
+        android:enabled="true"
+        android:icon="@drawable/ic_card_giftcard_white_24dp"
+        android:title="@string/gift" />
+
+    <item
         android:id="@+id/action_song"
         android:enabled="true"
         android:icon="@drawable/ic_audiotrack_white_24dp"
         android:title="@string/songs" />
-    <item
-        android:id="@+id/action_album"
-        android:enabled="true"
-        android:icon="@drawable/ic_album_white_24dp"
-        android:title="@string/albums" />
+    <!-- <item
+         android:id="@+id/action_album"
+         android:enabled="true"
+         android:icon="@drawable/ic_album_white_24dp"
+         android:title="@string/albums" />-->
     <item
         android:id="@+id/action_artist"
         android:enabled="true"

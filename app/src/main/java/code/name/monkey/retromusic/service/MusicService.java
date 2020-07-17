@@ -25,6 +25,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
@@ -57,25 +58,30 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
+import code.name.monkey.retromusic.BuildConfig;
 import code.name.monkey.retromusic.R;
 import code.name.monkey.retromusic.appwidgets.AppWidgetBig;
 import code.name.monkey.retromusic.appwidgets.AppWidgetCard;
 import code.name.monkey.retromusic.appwidgets.AppWidgetClassic;
 import code.name.monkey.retromusic.appwidgets.AppWidgetSmall;
 import code.name.monkey.retromusic.appwidgets.AppWidgetText;
+import code.name.monkey.retromusic.deezer.Data;
 import code.name.monkey.retromusic.glide.BlurTransformation;
 import code.name.monkey.retromusic.glide.SongGlideRequest;
 import code.name.monkey.retromusic.helper.ShuffleHelper;
+import code.name.monkey.retromusic.model.CommonData;
 import code.name.monkey.retromusic.model.Playlist;
 import code.name.monkey.retromusic.model.Song;
 import code.name.monkey.retromusic.providers.HistoryStore;
 import code.name.monkey.retromusic.providers.MusicPlaybackQueueStore;
 import code.name.monkey.retromusic.providers.SongPlayCountStore;
+import code.name.monkey.retromusic.rest.music.model.SongBean;
 import code.name.monkey.retromusic.service.notification.PlayingNotification;
 import code.name.monkey.retromusic.service.notification.PlayingNotificationImpl;
 import code.name.monkey.retromusic.service.notification.PlayingNotificationOreo;
@@ -84,13 +90,6 @@ import code.name.monkey.retromusic.util.MusicUtil;
 import code.name.monkey.retromusic.util.PreferenceUtil;
 import code.name.monkey.retromusic.util.RetroUtil;
 
-import static code.name.monkey.retromusic.ConstantsKt.ALBUM_ART_ON_LOCKSCREEN;
-import static code.name.monkey.retromusic.ConstantsKt.BLURRED_ALBUM_ART;
-import static code.name.monkey.retromusic.ConstantsKt.CLASSIC_NOTIFICATION;
-import static code.name.monkey.retromusic.ConstantsKt.COLORED_NOTIFICATION;
-import static code.name.monkey.retromusic.ConstantsKt.GAPLESS_PLAYBACK;
-import static code.name.monkey.retromusic.ConstantsKt.TOGGLE_HEADSET;
-
 /**
  * @author Karim Abou Zeid (kabouzeid), Andrew Neal
  */
@@ -98,12 +97,13 @@ public class MusicService extends Service implements
         SharedPreferences.OnSharedPreferenceChangeListener, Playback.PlaybackCallbacks {
 
     public static final String TAG = MusicService.class.getSimpleName();
-    public static final String RETRO_MUSIC_PACKAGE_NAME = "code.name.monkey.retromusic";
+    public static final String RETRO_MUSIC_PACKAGE_NAME = BuildConfig.APPLICATION_ID;
     public static final String MUSIC_PACKAGE_NAME = "com.android.music";
     public static final String ACTION_TOGGLE_PAUSE = RETRO_MUSIC_PACKAGE_NAME + ".togglepause";
     public static final String ACTION_PLAY = RETRO_MUSIC_PACKAGE_NAME + ".play";
     public static final String ACTION_PLAY_PLAYLIST = RETRO_MUSIC_PACKAGE_NAME + ".play.playlist";
     public static final String ACTION_PAUSE = RETRO_MUSIC_PACKAGE_NAME + ".pause";
+    public static final String ACTION_ERROR = RETRO_MUSIC_PACKAGE_NAME + ".error";
     public static final String ACTION_STOP = RETRO_MUSIC_PACKAGE_NAME + ".stop";
     public static final String ACTION_SKIP = RETRO_MUSIC_PACKAGE_NAME + ".skip";
     public static final String ACTION_REWIND = RETRO_MUSIC_PACKAGE_NAME + ".rewind";
@@ -124,6 +124,9 @@ public class MusicService extends Service implements
     public static final String CYCLE_REPEAT = RETRO_MUSIC_PACKAGE_NAME + ".cyclerepeat";
     public static final String TOGGLE_SHUFFLE = RETRO_MUSIC_PACKAGE_NAME + ".toggleshuffle";
     public static final String TOGGLE_FAVORITE = RETRO_MUSIC_PACKAGE_NAME + ".togglefavorite";
+    public static final String REWARD_PIECE_CHANGED = RETRO_MUSIC_PACKAGE_NAME + ".changepiece";
+    public static final String REWARD_SCORE_CHANGED = RETRO_MUSIC_PACKAGE_NAME + ".changescore";
+    public static final String REWARD_CHECKIN_CHANGED = RETRO_MUSIC_PACKAGE_NAME + ".changecheckin";
     public static final String SAVED_POSITION = "POSITION";
     public static final String SAVED_POSITION_IN_TRACK = "POSITION_IN_TRACK";
     public static final String SAVED_SHUFFLE_MODE = "SHUFFLE_MODE";
@@ -213,9 +216,11 @@ public class MusicService extends Service implements
     private MediaSessionCompat mediaSession;
     private ContentObserver mediaStoreObserver;
     private HandlerThread musicPlayerHandlerThread;
+
     private boolean notHandledMetaChangedForCurrentTrack;
-    private List<Song> originalPlayingQueue = new ArrayList<>();
-    private List<Song> playingQueue = new ArrayList<>();
+
+    private ArrayList<CommonData> originalPlayingQueue = new ArrayList<>();
+
     private boolean pausedByTransientLossOfFocus;
 
     private final BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
@@ -244,7 +249,7 @@ public class MusicService extends Service implements
             updateNotification();
         }
     };
-
+    private ArrayList<CommonData> playingQueue = new ArrayList<>();
     private QueueSaveHandler queueSaveHandler;
     private HandlerThread queueSaveHandlerThread;
     private boolean queuesRestored;
@@ -257,7 +262,7 @@ public class MusicService extends Service implements
             String action = intent.getAction();
             if (action != null) {
                 if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action) &&
-                        PreferenceUtil.INSTANCE.isBluetoothSpeaker()) {
+                        PreferenceUtil.getInstance(context).bluetoothSpeaker()) {
                     if (VERSION.SDK_INT >= VERSION_CODES.M) {
                         if (getAudioManager().getDevices(AudioManager.GET_DEVICES_OUTPUTS).length > 0) {
                             play();
@@ -332,6 +337,7 @@ public class MusicService extends Service implements
     @Override
     public void onCreate() {
         super.onCreate();
+
         final TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
         if (telephonyManager != null) {
             telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_NONE);
@@ -388,7 +394,7 @@ public class MusicService extends Service implements
         getContentResolver()
                 .registerContentObserver(MediaStore.Audio.Playlists.INTERNAL_CONTENT_URI, true, mediaStoreObserver);
 
-        PreferenceUtil.INSTANCE.registerOnSharedPreferenceChangedListener(this);
+        PreferenceUtil.getInstance(this).registerOnSharedPreferenceChangedListener(this);
 
         restoreState();
 
@@ -418,7 +424,7 @@ public class MusicService extends Service implements
         quit();
         releaseResources();
         getContentResolver().unregisterContentObserver(mediaStoreObserver);
-        PreferenceUtil.INSTANCE.unregisterOnSharedPreferenceChangedListener(this);
+        PreferenceUtil.getInstance(this).unregisterOnSharedPreferenceChangedListener(this);
         wakeLock.release();
 
         sendBroadcast(new Intent("code.name.monkey.retromusic.RETRO_MUSIC_SERVICE_DESTROYED"));
@@ -428,25 +434,25 @@ public class MusicService extends Service implements
         wakeLock.acquire(milli);
     }
 
-    public void addSong(int position, Song song) {
+    public void addSong(int position, CommonData song) {
         playingQueue.add(position, song);
         originalPlayingQueue.add(position, song);
         notifyChange(QUEUE_CHANGED);
     }
 
-    public void addSong(Song song) {
+    public void addSong(CommonData song) {
         playingQueue.add(song);
         originalPlayingQueue.add(song);
         notifyChange(QUEUE_CHANGED);
     }
 
-    public void addSongs(int position, List<Song> songs) {
+    public void addSongs(int position, List<CommonData> songs) {
         playingQueue.addAll(position, songs);
         originalPlayingQueue.addAll(position, songs);
         notifyChange(QUEUE_CHANGED);
     }
 
-    public void addSongs(List<Song> songs) {
+    public void addSongs(List<CommonData> songs) {
         playingQueue.addAll(songs);
         originalPlayingQueue.addAll(songs);
         notifyChange(QUEUE_CHANGED);
@@ -490,7 +496,7 @@ public class MusicService extends Service implements
     }
 
     @NonNull
-    public Song getCurrentSong() {
+    public CommonData getCurrentSong() {
         return getSongAt(getPosition());
     }
 
@@ -527,7 +533,7 @@ public class MusicService extends Service implements
     }
 
     @Nullable
-    public List<Song> getPlayingQueue() {
+    public ArrayList<CommonData> getPlayingQueue() {
         return playingQueue;
     }
 
@@ -575,7 +581,11 @@ public class MusicService extends Service implements
     public long getQueueDurationMillis(int position) {
         long duration = 0;
         for (int i = position + 1; i < playingQueue.size(); i++) {
-            duration += playingQueue.get(i).getDuration();
+            if (playingQueue.get(i).localSong()) {
+                duration += playingQueue.get(i).getLocalSong().getDuration();
+            } else if (playingQueue.get(i).cloudSong()) {
+                duration += playingQueue.get(i).getCloudSong().getDuration();
+            }
         }
         return duration;
     }
@@ -617,13 +627,17 @@ public class MusicService extends Service implements
                 break;
             case SHUFFLE_MODE_NONE:
                 this.shuffleMode = shuffleMode;
-                int currentSongId = Objects.requireNonNull(getCurrentSong()).getId();
+                int currentSongId = getCurSongId();
                 playingQueue = new ArrayList<>(originalPlayingQueue);
                 int newPosition = 0;
                 if (getPlayingQueue() != null) {
-                    for (Song song : getPlayingQueue()) {
-                        if (song.getId() == currentSongId) {
-                            newPosition = getPlayingQueue().indexOf(song);
+                    for (CommonData data : getPlayingQueue()) {
+                        if (data.localSong()) {
+                            if (data.getLocalSong().getId() == currentSongId) {
+                                newPosition = getPlayingQueue().indexOf(data);
+                            }
+                        } else if (data.cloudSong()) {
+                            //todo 处理线上音乐
                         }
                     }
                 }
@@ -635,11 +649,11 @@ public class MusicService extends Service implements
     }
 
     @NonNull
-    public Song getSongAt(int position) {
+    public CommonData getSongAt(int position) {
         if (position >= 0 && getPlayingQueue() != null && position < getPlayingQueue().size()) {
             return getPlayingQueue().get(position);
         } else {
-            return Song.Companion.getEmptySong();
+            return new CommonData(CommonData.TYPE_EMPTY, null, null);
         }
     }
 
@@ -663,8 +677,8 @@ public class MusicService extends Service implements
     }
 
     public void initNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
-                !PreferenceUtil.INSTANCE.isClassicNotification()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !PreferenceUtil.getInstance(this)
+                .classicNotification()) {
             playingNotification = new PlayingNotificationImpl();
         } else {
             playingNotification = new PlayingNotificationOreo();
@@ -696,10 +710,10 @@ public class MusicService extends Service implements
             return;
         }
         final int currentPosition = getPosition();
-        Song songToMove = playingQueue.remove(from);
+        CommonData songToMove = playingQueue.remove(from);
         playingQueue.add(to, songToMove);
         if (getShuffleMode() == SHUFFLE_MODE_NONE) {
-            Song tmpSong = originalPlayingQueue.remove(from);
+            CommonData tmpSong = originalPlayingQueue.remove(from);
             originalPlayingQueue.add(to, tmpSong);
         }
         if (from > currentPosition && to <= currentPosition) {
@@ -726,7 +740,7 @@ public class MusicService extends Service implements
     @Override
     public void onSharedPreferenceChanged(@NonNull SharedPreferences sharedPreferences, @NonNull String key) {
         switch (key) {
-            case GAPLESS_PLAYBACK:
+            case PreferenceUtil.GAPLESS_PLAYBACK:
                 if (sharedPreferences.getBoolean(key, false)) {
                     prepareNext();
                 } else {
@@ -735,18 +749,19 @@ public class MusicService extends Service implements
                     }
                 }
                 break;
-            case ALBUM_ART_ON_LOCKSCREEN:
-            case BLURRED_ALBUM_ART:
+            case PreferenceUtil.ALBUM_ART_ON_LOCKSCREEN:
+            case PreferenceUtil.BLURRED_ALBUM_ART:
                 updateMediaSessionMetaData();
                 break;
-            case COLORED_NOTIFICATION:
+            case PreferenceUtil.COLORED_NOTIFICATION:
+            case PreferenceUtil.DOMINANT_COLOR:
                 updateNotification();
                 break;
-            case CLASSIC_NOTIFICATION:
+            case PreferenceUtil.CLASSIC_NOTIFICATION:
                 initNotification();
                 updateNotification();
                 break;
-            case TOGGLE_HEADSET:
+            case PreferenceUtil.TOGGLE_HEADSET:
                 registerHeadsetEvents();
                 break;
         }
@@ -754,43 +769,45 @@ public class MusicService extends Service implements
 
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        if (intent != null && intent.getAction() != null) {
-            restoreQueuesAndPositionIfNecessary();
-            String action = intent.getAction();
-            switch (action) {
-                case ACTION_TOGGLE_PAUSE:
-                    if (isPlaying()) {
+        if (intent != null) {
+            if (intent.getAction() != null) {
+                restoreQueuesAndPositionIfNecessary();
+                String action = intent.getAction();
+                switch (action) {
+                    case ACTION_TOGGLE_PAUSE:
+                        if (isPlaying()) {
+                            pause();
+                        } else {
+                            play();
+                        }
+                        break;
+                    case ACTION_PAUSE:
                         pause();
-                    } else {
+                        break;
+                    case ACTION_PLAY:
                         play();
-                    }
-                    break;
-                case ACTION_PAUSE:
-                    pause();
-                    break;
-                case ACTION_PLAY:
-                    play();
-                    break;
-                case ACTION_PLAY_PLAYLIST:
-                    playFromPlaylist(intent);
-                    break;
-                case ACTION_REWIND:
-                    back(true);
-                    break;
-                case ACTION_SKIP:
-                    playNextSong(true);
-                    break;
-                case ACTION_STOP:
-                case ACTION_QUIT:
-                    pendingQuit = false;
-                    quit();
-                    break;
-                case ACTION_PENDING_QUIT:
-                    pendingQuit = true;
-                    break;
-                case TOGGLE_FAVORITE:
-                    MusicUtil.toggleFavorite(getApplicationContext(), getCurrentSong());
-                    break;
+                        break;
+                    case ACTION_PLAY_PLAYLIST:
+                        playFromPlaylist(intent);
+                        break;
+                    case ACTION_REWIND:
+                        back(true);
+                        break;
+                    case ACTION_SKIP:
+                        playNextSong(true);
+                        break;
+                    case ACTION_STOP:
+                    case ACTION_QUIT:
+                        pendingQuit = false;
+                        quit();
+                        break;
+                    case ACTION_PENDING_QUIT:
+                        pendingQuit = true;
+                        break;
+                    case TOGGLE_FAVORITE:
+                        MusicUtil.toggleFavorite(getApplicationContext(), getCurrentSong());
+                        break;
+                }
             }
         }
 
@@ -816,7 +833,7 @@ public class MusicService extends Service implements
         return true;
     }
 
-    public void openQueue(@Nullable final List<Song> playingQueue, final int startPosition,
+    public void openQueue(@Nullable final List<CommonData> playingQueue, final int startPosition,
                           final boolean startPlaying) {
         if (playingQueue != null && !playingQueue.isEmpty() && startPosition >= 0 && startPosition < playingQueue
                 .size()) {
@@ -911,7 +928,7 @@ public class MusicService extends Service implements
         }
     }
 
-    public void playSongs(ArrayList<Song> songs, int shuffleMode) {
+    public void playSongs(ArrayList<CommonData> songs, int shuffleMode) {
         if (songs != null && !songs.isEmpty()) {
             if (shuffleMode == SHUFFLE_MODE_SHUFFLE) {
                 int startPosition = new Random().nextInt(songs.size());
@@ -931,7 +948,12 @@ public class MusicService extends Service implements
             try {
                 int nextPosition = getNextPosition(false);
                 if (playback != null) {
-                    playback.setNextDataSource(getTrackUri(Objects.requireNonNull(getSongAt(nextPosition))));
+                    CommonData data = getSongAt(nextPosition);
+                    if (data.localSong()) {
+                        playback.setNextDataSource(getTrackUri(Objects.requireNonNull(data.getLocalSong())));
+                    } else if (data.cloudSong()) {
+                        playback.setNextDataSource(data.getCloudSong().getCache());
+                    }
                 }
                 this.nextPosition = nextPosition;
                 return true;
@@ -969,33 +991,59 @@ public class MusicService extends Service implements
         notifyChange(QUEUE_CHANGED);
     }
 
-    public void removeSong(@NonNull Song song) {
+    public void removeSong(@NonNull CommonData song) {
+        ArrayList<CommonData> removePlayingQueue = new ArrayList<>();
         for (int i = 0; i < playingQueue.size(); i++) {
-            if (playingQueue.get(i).getId() == song.getId()) {
-                playingQueue.remove(i);
-                rePosition(i);
+            if (playingQueue.get(i).getDataType() == song.getDataType()) {
+                if (song.localSong()) {
+                    if (playingQueue.get(i).getLocalSong().getId() == song.getLocalSong().getId()) {
+                        removePlayingQueue.add(playingQueue.get(i));
+                    }
+                } else if (song.cloudSong()) {
+                    if (playingQueue.get(i).getCloudSong().getId() == song.getCloudSong().getId()) {
+                        removePlayingQueue.add(playingQueue.get(i));
+                    }
+                }
             }
         }
+        for (int i = 0; i < removePlayingQueue.size(); i++) {
+            playingQueue.remove(removePlayingQueue.get(i));
+            rePosition(i);
+        }
+        ArrayList<CommonData> removeOriginalPlayingQueue = new ArrayList<>();
         for (int i = 0; i < originalPlayingQueue.size(); i++) {
-            if (originalPlayingQueue.get(i).getId() == song.getId()) {
-                originalPlayingQueue.remove(i);
+            if (originalPlayingQueue.get(i).getDataType() == song.getDataType()) {
+                if (song.localSong()) {
+                    if (originalPlayingQueue.get(i).getLocalSong().getId() == song.getLocalSong().getId()) {
+                        removeOriginalPlayingQueue.add(originalPlayingQueue.get(i));
+                    }
+                } else if (song.cloudSong()) {
+                    if (originalPlayingQueue.get(i).getCloudSong().getId() == song.getCloudSong().getId()) {
+                        removeOriginalPlayingQueue.add(originalPlayingQueue.get(i));
+                    }
+                }
             }
+        }
+        for (int i = 0; i < removeOriginalPlayingQueue.size(); i++) {
+            originalPlayingQueue.remove(removeOriginalPlayingQueue.get(i));
         }
         notifyChange(QUEUE_CHANGED);
     }
 
     public synchronized void restoreQueuesAndPositionIfNecessary() {
         if (!queuesRestored && playingQueue.isEmpty()) {
-            List<Song> restoredQueue = MusicPlaybackQueueStore.getInstance(this).getSavedPlayingQueue();
-            List<Song> restoredOriginalQueue = MusicPlaybackQueueStore.getInstance(this).getSavedOriginalPlayingQueue();
+            ArrayList<Song> restoredQueue = MusicPlaybackQueueStore.getInstance(this).getSavedPlayingQueue();
+            ArrayList<Song> restoredOriginalQueue = MusicPlaybackQueueStore.getInstance(this)
+                    .getSavedOriginalPlayingQueue();
             int restoredPosition = PreferenceManager.getDefaultSharedPreferences(this).getInt(SAVED_POSITION, -1);
             int restoredPositionInTrack = PreferenceManager.getDefaultSharedPreferences(this)
                     .getInt(SAVED_POSITION_IN_TRACK, -1);
 
             if (restoredQueue.size() > 0 && restoredQueue.size() == restoredOriginalQueue.size()
                     && restoredPosition != -1) {
-                this.originalPlayingQueue = restoredOriginalQueue;
-                this.playingQueue = restoredQueue;
+                //todo: 播放队列
+                /*this.originalPlayingQueue = restoredOriginalQueue;
+                this.playingQueue = restoredQueue;*/
 
                 position = restoredPosition;
                 openCurrent();
@@ -1023,7 +1071,8 @@ public class MusicService extends Service implements
     }
 
     public void saveQueuesImpl() {
-        MusicPlaybackQueueStore.getInstance(this).saveQueues(playingQueue, originalPlayingQueue);
+        //todo:保存播放队列
+//        MusicPlaybackQueueStore.getInstance(this).saveQueues(playingQueue, originalPlayingQueue);
     }
 
     public void saveState() {
@@ -1051,18 +1100,32 @@ public class MusicService extends Service implements
     public void sendPublicIntent(@NonNull final String what) {
         final Intent intent = new Intent(what.replace(RETRO_MUSIC_PACKAGE_NAME, MUSIC_PACKAGE_NAME));
 
-        final Song song = getCurrentSong();
+        final CommonData data = getCurrentSong();
 
-        if (song != null) {
-            intent.putExtra("id", song.getId());
-            intent.putExtra("artist", song.getArtistName());
-            intent.putExtra("album", song.getAlbumName());
-            intent.putExtra("track", song.getTitle());
-            intent.putExtra("duration", song.getDuration());
-            intent.putExtra("position", (long) getSongProgressMillis());
-            intent.putExtra("playing", isPlaying());
-            intent.putExtra("scrobbling_source", RETRO_MUSIC_PACKAGE_NAME);
-            sendStickyBroadcast(intent);
+        if (data != null) {
+            if (data.localSong()) {
+                Song song = data.getLocalSong();
+                intent.putExtra("id", song.getId());
+                intent.putExtra("artist", song.getArtistName());
+                intent.putExtra("album", song.getAlbumName());
+                intent.putExtra("track", song.getTitle());
+                intent.putExtra("duration", song.getDuration());
+                intent.putExtra("position", (long) getSongProgressMillis());
+                intent.putExtra("playing", isPlaying());
+                intent.putExtra("scrobbling_source", RETRO_MUSIC_PACKAGE_NAME);
+                sendStickyBroadcast(intent);
+            } else if (data.cloudSong()) {
+                SongBean song = data.getCloudSong();
+                intent.putExtra("id", song.getId());
+                intent.putExtra("artist", song.getSingerName());
+                intent.putExtra("album", song.getChannelTitle());
+                intent.putExtra("track", song.getTitle());
+                intent.putExtra("duration", song.getDuration());
+                intent.putExtra("position", (long) getSongProgressMillis());
+                intent.putExtra("playing", isPlaying());
+                intent.putExtra("scrobbling_source", RETRO_MUSIC_PACKAGE_NAME);
+                sendStickyBroadcast(intent);
+            }
         }
     }
 
@@ -1086,59 +1149,70 @@ public class MusicService extends Service implements
     }
 
     public void updateNotification() {
-        if (playingNotification != null && getCurrentSong().getId() != -1) {
+        if (playingNotification != null && getCurSongId() != -1) {
             playingNotification.update();
         }
     }
 
-    void updateMediaSessionMetaData() {
-        final Song song = getCurrentSong();
-
-        if (song.getId() == -1) {
-            mediaSession.setMetadata(null);
-            return;
-        }
-
-        final MediaMetadataCompat.Builder metaData = new MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.getArtistName())
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, song.getArtistName())
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, song.getAlbumName())
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.getTitle())
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.getDuration())
-                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, getPosition() + 1)
-                .putLong(MediaMetadataCompat.METADATA_KEY_YEAR, song.getYear())
-                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, null)
-                .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getPlayingQueue().size());
-
-        if (PreferenceUtil.INSTANCE.isAlbumArtOnLockScreen()) {
-            final Point screenSize = RetroUtil.getScreenSize(MusicService.this);
-            final BitmapRequestBuilder<?, Bitmap> request = SongGlideRequest.Builder
-                    .from(Glide.with(MusicService.this), song)
-                    .checkIgnoreMediaStore(MusicService.this)
-                    .asBitmap().build();
-            if (PreferenceUtil.INSTANCE.isBlurredAlbumArt()) {
-                request.transform(new BlurTransformation.Builder(MusicService.this).build());
-            }
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    request.into(new SimpleTarget<Bitmap>(screenSize.x, screenSize.y) {
-                        @Override
-                        public void onLoadFailed(Exception e, Drawable errorDrawable) {
-                            super.onLoadFailed(e, errorDrawable);
-                            mediaSession.setMetadata(metaData.build());
-                        }
-
-                        @Override
-                        public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                            metaData.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, copy(resource));
-                            mediaSession.setMetadata(metaData.build());
-                        }
-                    });
-                }
-            });
+    private Integer getCurSongId() {
+        if (getCurrentSong().localSong()) {
+            return getCurrentSong().getLocalSong().getId();
+        } else if (getCurrentSong().cloudSong()) {
+            return getCurrentSong().getCloudSong().getId();
         } else {
-            mediaSession.setMetadata(metaData.build());
+            return -1;
+        }
+    }
+
+    void updateMediaSessionMetaData() {
+        final CommonData data = getCurrentSong();
+        if (data.localSong()) {
+            Song song = data.getLocalSong();
+            if (song.getId() == -1) {
+                mediaSession.setMetadata(null);
+                return;
+            }
+            final MediaMetadataCompat.Builder metaData = new MediaMetadataCompat.Builder()
+                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.getArtistName())
+                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, song.getArtistName())
+                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, song.getAlbumName())
+                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.getTitle())
+                    .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.getDuration())
+                    .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, getPosition() + 1)
+                    .putLong(MediaMetadataCompat.METADATA_KEY_YEAR, song.getYear())
+                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, null)
+                    .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, getPlayingQueue().size());
+
+            if (PreferenceUtil.getInstance(this).albumArtOnLockscreen()) {
+                final Point screenSize = RetroUtil.getScreenSize(MusicService.this);
+                final BitmapRequestBuilder<?, Bitmap> request = SongGlideRequest.Builder
+                        .from(Glide.with(MusicService.this), song.convertToCommonData())
+                        .checkIgnoreMediaStore(MusicService.this)
+                        .asBitmap().build();
+                if (PreferenceUtil.getInstance(this).blurredAlbumArt()) {
+                    request.transform(new BlurTransformation.Builder(MusicService.this).build());
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        request.into(new SimpleTarget<Bitmap>(screenSize.x, screenSize.y) {
+                            @Override
+                            public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                                super.onLoadFailed(e, errorDrawable);
+                                mediaSession.setMetadata(metaData.build());
+                            }
+
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                metaData.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, copy(resource));
+                                mediaSession.setMetadata(metaData.build());
+                            }
+                        });
+                    }
+                });
+            } else {
+                mediaSession.setMetadata(metaData.build());
+            }
         }
     }
 
@@ -1175,15 +1249,15 @@ public class MusicService extends Service implements
                 updateMediaSessionMetaData();
                 savePosition();
                 savePositionInTrack();
-                final Song currentSong = getCurrentSong();
-                if (currentSong != null) {
-                    HistoryStore.getInstance(this).addSongId(currentSong.getId());
+                final CommonData data = getCurrentSong();
+                if (data != null) {
+                    HistoryStore.getInstance(this).addSongId(getCurSongId(), data);
                 }
                 if (songPlayCountHelper.shouldBumpPlayCount()) {
-                    SongPlayCountStore.getInstance(this).bumpPlayCount(songPlayCountHelper.getSong().getId());
+                    SongPlayCountStore.getInstance(this).bumpPlayCount(songPlayCountHelper.getSong().getSongId());
                 }
-                if (currentSong != null) {
-                    songPlayCountHelper.notifySongChanged(currentSong);
+                if (data != null) {
+                    songPlayCountHelper.notifySongChanged(data);
                 }
                 break;
             case QUEUE_CHANGED:
@@ -1202,7 +1276,20 @@ public class MusicService extends Service implements
         synchronized (this) {
             try {
                 if (playback != null) {
-                    return playback.setDataSource(getTrackUri(Objects.requireNonNull(getCurrentSong())));
+                    if (getCurrentSong().localSong()) {
+                        return playback.setDataSource(getTrackUri(Objects.requireNonNull(getCurrentSong().getLocalSong())));
+                    } else if (getCurrentSong().cloudSong()) {
+                        Cursor downloadCursor = HistoryStore.getInstance(getBaseContext()).queryDownloadBySongId(getCurrentSong().getSongId());
+                        if (downloadCursor != null && downloadCursor.moveToFirst()) {
+                            String path = downloadCursor.getString(downloadCursor.getColumnIndex(HistoryStore.DownloadStoreColumns.PATH));
+                            File file = new File(path);
+                            if (file.exists() && file.canRead()) {
+                                downloadCursor.close();
+                                return playback.setDataSource(path);
+                            }
+                        }
+                        return playback.setDataSource(getCurrentSong().getCloudSong().getCache());
+                    }
                 }
             } catch (Exception e) {
                 return false;
@@ -1215,7 +1302,7 @@ public class MusicService extends Service implements
         Playlist playlist = intent.getParcelableExtra(INTENT_EXTRA_PLAYLIST);
         int shuffleMode = intent.getIntExtra(INTENT_EXTRA_SHUFFLE_MODE, getShuffleMode());
         if (playlist != null) {
-            ArrayList<Song> playlistSongs = playlist.getSongs(getApplicationContext());
+            ArrayList<CommonData> playlistSongs = playlist.getSongs(getApplicationContext());
             if (!playlistSongs.isEmpty()) {
                 if (shuffleMode == SHUFFLE_MODE_SHUFFLE) {
                     int startPosition = new Random().nextInt(playlistSongs.size());
@@ -1259,7 +1346,7 @@ public class MusicService extends Service implements
     }
 
     private void registerHeadsetEvents() {
-        if (!headsetReceiverRegistered && PreferenceUtil.INSTANCE.isHeadsetPlugged()) {
+        if (!headsetReceiverRegistered && PreferenceUtil.getInstance(this).getHeadsetPlugged()) {
             registerReceiver(headsetReceiver, headsetReceiverIntentFilter);
             headsetReceiverRegistered = true;
         }

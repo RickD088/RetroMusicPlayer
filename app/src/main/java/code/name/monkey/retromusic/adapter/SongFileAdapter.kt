@@ -1,18 +1,3 @@
-/*
- * Copyright 2019 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package code.name.monkey.retromusic.adapter
 
 import android.graphics.PorterDuff
@@ -112,14 +97,10 @@ class SongFileAdapter(
             val error = RetroUtil.getTintedVectorDrawable(
                 activity, R.drawable.ic_file_music_white_24dp, iconColor
             )
-            Glide.with(activity)
-                .load(AudioFileCover(file.path))
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .error(error)
-                .placeholder(error)
+            Glide.with(activity).load(AudioFileCover(file.path))
+                .diskCacheStrategy(DiskCacheStrategy.ALL).skipMemoryCache(false).error(error).placeholder(error)
                 .animate(android.R.anim.fade_in)
-                .signature(MediaStoreSignature("", file.lastModified(), 0))
-                .into(holder.image)
+                .signature(MediaStoreSignature("", file.lastModified(), 0)).into(holder.image)
         }
     }
 
@@ -161,7 +142,7 @@ class SongFileAdapter(
         init {
             if (menu != null && callbacks != null) {
                 menu?.setOnClickListener { v ->
-                    val position = layoutPosition
+                    val position = adapterPosition
                     if (isPositionInRange(position)) {
                         callbacks.onFileMenuClicked(dataSet[position], v)
                     }
@@ -173,7 +154,7 @@ class SongFileAdapter(
         }
 
         override fun onClick(v: View?) {
-            val position = layoutPosition
+            val position = adapterPosition
             if (isPositionInRange(position)) {
                 if (isInQuickSelectMode) {
                     toggleChecked(position)
@@ -184,7 +165,7 @@ class SongFileAdapter(
         }
 
         override fun onLongClick(v: View?): Boolean {
-            val position = layoutPosition
+            val position = adapterPosition
             return isPositionInRange(position) && toggleChecked(position)
         }
 

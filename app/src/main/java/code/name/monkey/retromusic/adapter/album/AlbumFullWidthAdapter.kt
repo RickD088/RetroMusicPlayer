@@ -22,28 +22,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import code.name.monkey.retromusic.R
+import code.name.monkey.retromusic.extensions.toCommonData
 import code.name.monkey.retromusic.glide.AlbumGlideRequest
 import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.util.NavigationUtil
-import code.name.monkey.retromusic.util.color.MediaNotificationProcessor
 import code.name.monkey.retromusic.views.MetalRecyclerViewPager
 import com.bumptech.glide.Glide
 
 class AlbumFullWidthAdapter(
-    private val activity: Activity,
-    private val dataSet: List<Album>,
-    metrics: DisplayMetrics
+        private val activity: Activity,
+        private val dataSet: List<Album>,
+        metrics: DisplayMetrics
 ) : MetalRecyclerViewPager.MetalAdapter<AlbumFullWidthAdapter.FullMetalViewHolder>(metrics) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FullMetalViewHolder {
         return FullMetalViewHolder(
-            LayoutInflater.from(parent.context).inflate(
-                R.layout.pager_item,
-                parent,
-                false
-            )
+                LayoutInflater.from(parent.context).inflate(
+                        R.layout.pager_item,
+                        parent,
+                        false
+                )
         )
     }
 
@@ -56,9 +56,10 @@ class AlbumFullWidthAdapter(
         holder.playSongs?.setOnClickListener {
             album.songs?.let { songs ->
                 MusicPlayerRemote.openQueue(
-                    songs,
-                    0,
-                    true
+                        activity,
+                        songs.toCommonData(),
+                        0,
+                        true
                 )
             }
         }
@@ -77,16 +78,14 @@ class AlbumFullWidthAdapter(
         if (holder.image == null) {
             return
         }
-
         AlbumGlideRequest.Builder.from(Glide.with(activity), album.safeGetFirstSong())
-            .checkIgnoreMediaStore(activity)
-            .generatePalette(activity)
-            .build()
-            .into(object : RetroMusicColoredTarget(holder.image!!) {
-                override fun onColorReady(colors: MediaNotificationProcessor) {
-
-                }
-            })
+                .checkIgnoreMediaStore(activity)
+                .generatePalette(activity)
+                .build()
+                .into(object : RetroMusicColoredTarget(holder.image!!) {
+                    override fun onColorReady(color: Int) {
+                    }
+                })
     }
 
     override fun getItemCount(): Int {
@@ -94,15 +93,15 @@ class AlbumFullWidthAdapter(
     }
 
     inner class FullMetalViewHolder(itemView: View) :
-        MetalRecyclerViewPager.MetalViewHolder(itemView) {
+            MetalRecyclerViewPager.MetalViewHolder(itemView) {
 
         override fun onClick(v: View?) {
             val activityOptions = ActivityOptions.makeSceneTransitionAnimation(
-                activity,
-                imageContainerCard ?: image,
-                activity.getString(R.string.transition_album_art)
+                    activity,
+                    imageContainerCard ?: image,
+                    "${activity.getString(R.string.transition_album_art)}_${dataSet[adapterPosition].id}"
             )
-            NavigationUtil.goToAlbumOptions(activity, dataSet[layoutPosition].id, activityOptions)
+            NavigationUtil.goToAlbumOptions(activity, dataSet[adapterPosition].id, dataSet[adapterPosition].convertToCommonData(), activityOptions)
         }
     }
 }
